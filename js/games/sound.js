@@ -474,7 +474,7 @@ const rhythm = {
     };
 
     api.life.on(window, 'keydown', e => { if (e.code === 'Space'){ e.preventDefault(); tap(); } });
-    const zone = el('div', { class:'zone', style:{ display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:'16px', cursor:'pointer', minHeight:'260px' } }, big, hint, dots);
+    const zone = el('div', { class:'zone', style:{ display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:'16px', cursor:'pointer', minHeight:'min(260px,36vh)' } }, big, hint, dots);
     api.life.on(zone, 'pointerdown', tap);
     stage.replaceChildren(
       el('div', { class:'hud' }, 'tempo ', el('b', { text:'hidden' })),

@@ -234,7 +234,7 @@ const nback = {
     };
 
     api.life.on(window, 'keydown', e => { if (e.code === 'Space'){ e.preventDefault(); hit(); } });
-    const zone = el('div', { class:'zone', style:{ display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:'10px', cursor:'pointer', minHeight:'240px' } }, big, feed);
+    const zone = el('div', { class:'zone', style:{ display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:'10px', cursor:'pointer', minHeight:'min(240px,34vh)' } }, big, feed);
     api.life.on(zone, 'pointerdown', hit);
     stage.replaceChildren(hud, zone, el('div', { class:'hint', html:'<span class="kbd">space</span> when it matches two back' }));
     countdown(stage, api.life, api.sfx, () => { stage.replaceChildren(hud, zone, el('div', { class:'hint', html:'<span class="kbd">space</span> when it matches two back' })); step(); api.life.every(step, GAP); });

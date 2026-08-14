@@ -245,7 +245,7 @@ const dodge = {
   rule:'Your dot follows the cursor. Touch nothing. Survive as long as you can.',
   unit:'s', higherBetter:true,
   mount(stage, api){
-    const zone = el('div', { class:'zone', style:{ cursor:'none', minHeight:'380px' } });
+    const zone = el('div', { class:'zone', style:{ cursor:'none', minHeight:'min(380px,48vh)' } });
     const you = el('div', { style:{ position:'absolute', width:'14px', height:'14px', borderRadius:'50%', background:'#fff', transform:'translate(-50%,-50%)', boxShadow:'0 0 14px rgba(255,255,255,.7)' } });
     const hud = el('div', { class:'hud' });
     zone.append(you);

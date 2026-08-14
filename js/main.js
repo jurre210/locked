@@ -127,7 +127,7 @@ function home(){
     }))
   );
 
-  const list = activeCat === 'all' ? GAMES : GAMES.filter(g => g.cat === activeCat);
+  let list = activeCat === 'all' ? GAMES : GAMES.filter(g => g.cat === activeCat);
   grid.append(...list.map(g => el('a', {
     class:'tile' + (g.special ? ' special' : ''), href:'#/' + g.key,
     onclick(){ A.sfx.click(); }, onmouseenter(){ A.sfx.hover(); }
@@ -135,9 +135,33 @@ function home(){
     el('div', { class:'tile-top' },
       el('div', { class:'tile-name', text:g.name }),
       el('div', { class:'tile-cat', text: g.special ? 'mode' : g.cat })),
-    el('div', { class:'tile-blurb', text:g.blurb }),
+    el('div', { class:'tile-blurb' }, el('span', { text:g.blurb })),
     el('div', { class:'tile-best', html: bestLine(g) })
   )));
+
+  // Utility tiles close off the grid instead of leaving dead cells.
+  if (activeCat === 'all'){
+    const r = S.rating();
+    const played = Object.values(S.all()).filter(x => x.plays > 0).length;
+    const utils = [
+      { name:'surprise me', cat:'shuffle', blurb:'Drops you straight into one of the ' + GAMES.length + ' at random. No deciding.',
+        foot:'one click, no thinking', go(){ A.unlock(); A.sfx.start(); location.hash = '#/' + pick(GAMES).key; } },
+      { name:'your record', cat:'stats', blurb:'Every best score you have set, plus one number for how dialed in you are overall.',
+        foot: r != null ? `rating <b>${r}</b> · ${played}/${GAMES.length} played` : 'nothing played yet', go: stats },
+      { name:'what is this', cat:'about', blurb:'Where the scores go, where the songs come from, and how to add a game of your own.',
+        foot:'no accounts, no tracking', go: about }
+    ];
+    grid.append(...utils.map(u => el('a', {
+      class:'tile util', href:'#', onclick(e){ e.preventDefault(); A.sfx.click(); u.go(); }, onmouseenter(){ A.sfx.hover(); }
+    },
+      el('div', { class:'tile-top' },
+        el('div', { class:'tile-name', text:u.name }),
+        el('div', { class:'tile-cat', text:u.cat })),
+      el('div', { class:'tile-blurb' }, el('span', { text:u.blurb })),
+      el('div', { class:'tile-best', html:u.foot })
+    )));
+    list = list.concat(utils);
+  }
 
   // Pad the last row so a part-filled grid never shows a bare slab.
   // Measured off the grid itself — reading it a frame after mount gave a
@@ -213,6 +237,28 @@ function stats(){
   modal.hidden = false;
   A.sfx.click();
 }
+function about(){
+  const row = (k, v) => el('div', { class:'stat-row' }, el('span', { text:k }), el('span', { class:'m', text:v }));
+  modalBody.replaceChildren(
+    el('h3', { text:'what is this' }),
+    el('p', { class:'sub', text:`${GAMES.length} very small games that measure something specific about you, and then tell you the truth about it.` }),
+    row('accounts', 'none — there is nothing to sign into'),
+    row('your scores', 'stored in this browser only, never sent anywhere'),
+    row('other devices', 'separate scores — nothing syncs'),
+    row('sound', 'synthesised live, no audio files'),
+    row('songless · charts', 'official 30-second previews from Apple\'s public search API'),
+    row('songless · melodies', '40 public-domain tunes, played offline'),
+    row('daily & songless', 'seeded by the date — same for everyone, until midnight'),
+    el('p', { class:'sub', style:{ marginTop:'22px' },
+      text:'Built as a static site: no build step, no dependencies, no server. Adding a game means dropping one object into js/games and exporting it.' }),
+    el('div', { style:{ display:'flex', gap:'10px', flexWrap:'wrap' } },
+      el('a', { class:'btn', href:'https://github.com/jurre210/locked', target:'_blank', rel:'noopener', text:'source on github' }),
+      el('button', { class:'btn ghost', text:'your record', onclick: stats })
+    )
+  );
+  modal.hidden = false;
+}
+
 function closeModal(){ modal.hidden = true; }
 
 document.getElementById('modal-x').onclick = closeModal;

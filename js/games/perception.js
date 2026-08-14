@@ -279,7 +279,7 @@ const count = {
     const flash = () => {
       if (i >= N) return end();
       const n = irnd(...RANGES[i]);
-      const zone = el('div', { class:'zone', style:{ minHeight:'340px', cursor:'default' } });
+      const zone = el('div', { class:'zone', style:{ minHeight:'min(340px,44vh)', cursor:'default' } });
       for (let k = 0; k < n; k++){
         const s = rnd(9, 15);
         zone.append(el('div', { class:'target', style:{
