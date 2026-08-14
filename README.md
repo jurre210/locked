@@ -8,18 +8,12 @@ one rule, one score, and a verdict that is rude about it.
 The site is static — no build step, no server — so any static host works. Every path is
 relative, so it is happy in a subdirectory like `username.github.io/locked/`.
 
-**The easy way.** Install the GitHub CLI once, sign in, then double-click `publish.cmd`:
+**The easy way.** The GitHub CLI is already installed. Two double-clicks:
 
-```bash
-winget install GitHub.cli
-```
-
-```bash
-gh auth login
-```
-
-`publish.cmd` creates the repo, pushes, switches Pages on and prints the URL. Run it
-again any time to push updates.
+1. **`1 - LOGIN FIRST.cmd`** — signs the CLI in to your GitHub account. This one needs
+   your password, so it has to be you.
+2. **`2 - PUBLISH.cmd`** — creates the repo, pushes, switches Pages on, prints the URL
+   and opens it. Run it again any time to push updates.
 
 **By hand.** Make an empty repo called `locked` on github.com, then:
 
