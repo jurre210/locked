@@ -1,4 +1,4 @@
-import { el, clamp, rnd, irnd, pick, shuffle, fmt, countdown, cellSize } from '../core/ui.js';
+import { el, clamp, rnd, irnd, pick, shuffle, fmt, countdown, cellSize, countUp } from '../core/ui.js';
 import { nudge } from '../core/feedback.js';
 
 /* =================================================================== */
@@ -8,7 +8,7 @@ const colour = {
   key:'colour', name:'colour', cat:'perception', family:'color',
   blurb:'One colour at a time. Look, then rebuild it. Five rounds.',
   rule:'You see a colour, it disappears, you rebuild it with hue, saturation and lightness. One at a time — look, build, next.',
-  unit:'%', higherBetter:true,
+  unit:'/10', higherBetter:true,
   mount(stage, api){
     const N = 5;
     // targets are authored in HSL so the sliders map onto how the colour was made
@@ -74,18 +74,20 @@ const colour = {
       go.onclick = () => {
         api.sfx.click();
         guesses.push(hsl2rgb(h, s, l));
-        const acc = 1 - dist(targets[i], guesses[i]);
-        // instant feedback, then straight on to the next colour
+        const pts = score10(targets[i], guesses[i]);
+        const num = el('div', { class:'big', text:'0.0' });
         stage.replaceChildren(
           el('div', { class:'hud' }, 'round ', el('b', { text:`${i+1}/${N}` })),
           el('div', { style:{ display:'flex', gap:'10px' } },
             el('div', { class:'swatch', style:{ width:'132px', height:'96px', background:`rgb(${targets[i].join(',')})` } }),
             el('div', { class:'swatch', style:{ width:'132px', height:'96px', background:`hsl(${h} ${s}% ${l}%)` } })),
           el('div', { class:'hint', text:'theirs · yours' }),
-          el('div', { class:'big', text: Math.round(acc*100) + '%' })
+          el('div', { style:{ display:'flex', alignItems:'baseline', gap:'4px' } },
+            num, el('div', { class:'mid', style:{ color:'var(--dim)' }, text:'/10' }))
         );
-        acc > .93 ? api.sfx.good() : acc > .82 ? api.sfx.click() : api.sfx.miss();
-        api.life.after(() => showPhase(i + 1), 1100);
+        countUp(num, pts, { ms:900, decimals:1, life:api.life });
+        pts >= 8.5 ? api.sfx.good() : pts >= 6 ? api.sfx.click() : api.sfx.miss();
+        api.life.after(() => showPhase(i + 1), 1700);
       };
 
       stage.replaceChildren(
@@ -99,18 +101,18 @@ const colour = {
     };
 
     const done = () => {
-      const accs = targets.map((t, i) => 1 - dist(t, guesses[i]));
-      const avg = accs.reduce((a,b)=>a+b,0) / N;
+      const pts = targets.map((t, i) => score10(t, guesses[i]));
+      const avg = pts.reduce((a,b)=>a+b,0) / N;
       const rows = el('div', { style:{ display:'flex', gap:'6px', marginTop:'10px' } },
         targets.map((t,i) => el('div', { style:{ display:'flex', flexDirection:'column', gap:'3px' } },
           el('div', { class:'swatch', style:{ width:'54px', height:'34px', background:`rgb(${t.join(',')})` } }),
           el('div', { class:'swatch', style:{ width:'54px', height:'34px', background:`rgb(${guesses[i].join(',')})` } }),
-          el('div', { style:{ fontFamily:'var(--mono)', fontSize:'10px', color:'var(--dim)', textAlign:'center' }, text: Math.round(accs[i]*100)+'' })
+          el('div', { style:{ fontFamily:'var(--mono)', fontSize:'10px', color:'var(--dim)', textAlign:'center' }, text: pts[i].toFixed(1) })
         ))
       );
       stage.replaceChildren(rows);
-      api.finish(Math.round(avg * 1000) / 10, curve(avg, .70, .965), { label:'accuracy %', raw: Math.round(avg*1000)/10,
-        breakdown:[['best round', Math.round(Math.max(...accs)*100)+'%'], ['worst round', Math.round(Math.min(...accs)*100)+'%']] });
+      api.finish(Math.round(avg * 10) / 10, curve(avg, 4.6, 9.4), { label:'score out of 10',
+        breakdown:[['best round', Math.max(...pts).toFixed(1)], ['worst round', Math.min(...pts).toFixed(1)]] });
     };
 
     showPhase(0);
@@ -125,12 +127,33 @@ function hsl2rgb(h, s, l){
   return [f(0), f(8), f(4)];
 }
 
-// redmean colour distance, normalised 0..1
-function dist(a, b){
-  const rm = (a[0] + b[0]) / 2;
-  const dr = a[0]-b[0], dg = a[1]-b[1], db = a[2]-b[2];
-  const d = Math.sqrt((2 + rm/256)*dr*dr + 4*dg*dg + (2 + (255-rm)/256)*db*db);
-  return clamp(d / 765, 0, 1);
+/* Colour difference in CIE Lab. Redmean is a cheap approximation of how
+   different two colours *look*, and it scored obviously-close matches as
+   badly as obviously-wrong ones. Lab is built for exactly this, so the
+   number now tracks what your eye says. */
+function rgb2lab([r, g, b]){
+  const lin = c => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const R = lin(r), G = lin(g), B = lin(b);
+  // sRGB -> XYZ (D65), then normalised against the white point
+  let x = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047;
+  let y = (R * 0.2126 + G * 0.7152 + B * 0.0722);
+  let z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
+  const f = t => t > 0.008856 ? Math.cbrt(t) : (7.787 * t) + 16 / 116;
+  x = f(x); y = f(y); z = f(z);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+
+/** Perceptual distance. ~1 is the smallest difference an eye can catch. */
+function deltaE(a, b){
+  const A = rgb2lab(a), B = rgb2lab(b);
+  return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]);
+}
+
+/** deltaE -> a score out of 10. dE 0 = perfect, dE 60+ = nothing.
+    60 rather than 50 so a wrong-but-honest attempt still separates itself
+    from not having tried at all. */
+function score10(a, b){
+  return clamp(10 * (1 - deltaE(a, b) / 60), 0, 10);
 }
 const curve = (v, worst, best) => clamp((v - worst) / (best - worst), 0, 1);
 
@@ -142,15 +165,22 @@ const shade = {
   blurb:'One tile is a slightly different colour. Every round it gets harder.',
   rule:'Click the tile that does not match. Three mistakes and it ends.',
   unit:'lvl', higherBetter:true,
+  levels:['easy','normal','hard'],
   mount(stage, api){
-    let level = 1, lives = 3;
+    const L = {
+      easy:   { grow:4, maxSize:5, d0:42, decay:0.940, floor:3.2, lives:4, anchors:[5, 34] },
+      normal: { grow:3, maxSize:7, d0:38, decay:0.915, floor:1.8, lives:3, anchors:[4, 30] },
+      hard:   { grow:2, maxSize:8, d0:30, decay:0.880, floor:0.9, lives:2, anchors:[3, 26] }
+    }[api.level] || {};
+    let level = 1, lives = L.lives;
+    const sizeAt = lv => Math.min(2 + Math.ceil(lv / L.grow), L.maxSize);
+    const deltaAt = lv => Math.max(L.floor, L.d0 * Math.pow(L.decay, lv));
     const round = () => {
-      // both the grid and the colour gap were tightening far too quickly
-      const size = Math.min(2 + Math.ceil(level / 3), 7);
+      const size = sizeAt(level);
       const n = size * size;
       const odd = irnd(0, n - 1);
       const hue = irnd(0, 359), sat = irnd(45, 85), lig = irnd(40, 62);
-      const delta = Math.max(1.8, 38 * Math.pow(0.915, level));
+      const delta = deltaAt(level);
       const base = `hsl(${hue} ${sat}% ${lig}%)`;
       const diff = `hsl(${hue} ${sat}% ${clamp(lig + (Math.random() < .5 ? -delta : delta), 8, 92)}%)`;
       const px = cellSize(size, { maxPx:120, minPx:26 });
@@ -172,15 +202,14 @@ const shade = {
       const hud = el('div', { class:'hud' });
       const paintHud = () => hud.replaceChildren(
         el('span', {}, 'level ', el('b', { text:String(level) })),
-        el('span', {}, 'lives ', el('b', { text:'●'.repeat(Math.max(0,lives)) + '○'.repeat(3 - Math.max(0,lives)) }))
+        el('span', {}, 'lives ', el('b', { text:'●'.repeat(Math.max(0,lives)) + '○'.repeat(Math.max(0, L.lives - Math.max(0,lives))) }))
       );
       paintHud();
       stage.replaceChildren(hud, pad);
     };
     const end = () => {
-      api.finish(level, curve(level, 4, 30), { label:'level reached',
-        breakdown:[['grid', `${Math.min(2 + Math.ceil(level / 3), 7)}×`],
-                   ['final gap', (Math.max(1.8, 38 * Math.pow(0.915, level))).toFixed(1) + '%']] });
+      api.finish(level, curve(level, L.anchors[0], L.anchors[1]), { label:'level reached',
+        breakdown:[['grid', `${sizeAt(level)}×`], ['final gap', deltaAt(level).toFixed(1) + '%']] });
     };
     round();
   }
@@ -272,10 +301,16 @@ const count = {
   blurb:'Dots flash for a moment. How many were there? Close counts.',
   rule:'Six flashes, each busier than the last. Type roughly how many you saw — you are scored on how close you get, not on being exact.',
   unit:'%', higherBetter:true,
+  levels:['easy','normal','hard'],
   mount(stage, api){
+    const L = {
+      easy:   { ranges:[[3,6],[6,10],[10,15],[15,22],[22,30],[30,40]], base:460, step:120, anchors:[62, 95] },
+      normal: { ranges:[[4,7],[8,13],[14,21],[22,32],[33,46],[47,64]], base:320, step:90,  anchors:[55, 93] },
+      hard:   { ranges:[[6,11],[12,20],[21,34],[35,52],[53,74],[75,99]], base:200, step:45, anchors:[48, 90] }
+    }[api.level] || {};
     const N = 6; let i = 0; const errs = [];
     // starts genuinely countable and ramps into estimation territory
-    const RANGES = [[4,7], [8,13], [14,21], [22,32], [33,46], [47,64]];
+    const RANGES = L.ranges;
     const flash = () => {
       if (i >= N) return end();
       const n = irnd(...RANGES[i]);
@@ -289,7 +324,7 @@ const count = {
       stage.replaceChildren(el('div', { class:'hud' }, 'flash ', el('b', { text:`${i+1}/${N}` })), zone);
       api.sfx.tick();
       // more dots, more looking time — a fifth of a second for 60 dots was absurd
-      api.life.after(() => ask(n), 320 + i * 90);
+      api.life.after(() => ask(n), L.base + i * L.step);
     };
     const ask = (n) => {
       const inp = el('input', { class:'field', type:'text', inputmode:'numeric', placeholder:'how many?', autocomplete:'off' });
@@ -314,7 +349,7 @@ const count = {
     const end = () => {
       const avg = errs.reduce((a,b)=>a+b,0) / errs.length;
       const acc = (1 - avg) * 100;
-      api.finish(Math.round(acc*10)/10, curve(acc, 55, 93), { label:'accuracy %',
+      api.finish(Math.round(acc*10)/10, curve(acc, L.anchors[0], L.anchors[1]), { label:'accuracy %',
         breakdown:[['best flash', ((1 - Math.min(...errs)) * 100).toFixed(0) + '%'],
                    ['worst flash', ((1 - Math.max(...errs)) * 100).toFixed(0) + '%']] });
     };
@@ -330,8 +365,14 @@ const odd = {
   blurb:'One shape in the grid is wrong. Find as many as you can in 40 seconds.',
   rule:'Every grid hides one shape that differs. Click it. Forty seconds on the clock.',
   unit:'found', higherBetter:true,
+  levels:['easy','normal','hard'],
   mount(stage, api){
     const GLYPHS = ['◆','●','■','▲','★','✚','◗','⬢','◐','⬟'];
+    const L = {
+      easy:   { grow:7, maxSize:5, d0:44, decay:0.9, floor:15, anchors:[4, 26] },
+      normal: { grow:5, maxSize:6, d0:40, decay:1.2, floor:9,  anchors:[3, 22] },
+      hard:   { grow:3, maxSize:7, d0:32, decay:1.5, floor:4,  anchors:[3, 18] }
+    }[api.level] || {};
     let found = 0, misses = 0, level = 0, running = false, t0 = 0;
     const DUR = 40000;
 
@@ -347,12 +388,12 @@ const odd = {
     };
 
     const round = () => {
-      const size = clamp(3 + Math.floor(level / 5), 3, 6);
+      const size = clamp(3 + Math.floor(level / L.grow), 3, L.maxSize);
       const n = size * size;
       const oddIdx = irnd(0, n - 1);
       const g = pick(GLYPHS);
       const rot = irnd(0, 359);
-      const drift = Math.max(9, 40 - level * 1.2);
+      const drift = Math.max(L.floor, L.d0 - level * L.decay);
       const px = cellSize(size, { maxPx:110, minPx:30, vFrac:.40 });
       const pad = el('div', { class:'pad', style:{ gridTemplateColumns:`repeat(${size},${px}px)` } });
       for (let k = 0; k < n; k++){
@@ -384,8 +425,8 @@ const odd = {
     const end = () => {
       running = false;
       const score = Math.max(0, found - misses * 0.5);
-      api.finish(found, curve(score, 3, 22), { label:'shapes found',
-        breakdown:[['misses', String(misses)], ['hardest grid', `${clamp(3 + Math.floor(level / 5), 3, 6)}×`]] });
+      api.finish(found, curve(score, L.anchors[0], L.anchors[1]), { label:'shapes found',
+        breakdown:[['misses', String(misses)], ['hardest grid', `${clamp(3 + Math.floor(level / L.grow), 3, L.maxSize)}×`]] });
     };
     countdown(stage, api.life, api.sfx, begin);
   }

@@ -2,17 +2,34 @@
 let ctx = null;
 let master = null;
 let enabled = localStorage.getItem('locked.sound') !== '0';
+// Streamed previews were mastered far louder than the synth, so the default
+// sits well below full scale and everything is scaled against it.
+let volume = (() => {
+  const v = parseFloat(localStorage.getItem('locked.volume'));
+  return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.55;
+})();
 
 function ac(){
   if (!ctx){
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     master = ctx.createGain();
-    master.gain.value = 0.9;
+    master.gain.value = volume;
     master.connect(ctx.destination);
   }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
 }
+
+export function getVolume(){ return volume; }
+export function setVolume(v){
+  volume = Math.max(0, Math.min(1, v));
+  localStorage.setItem('locked.volume', String(volume));
+  if (master) master.gain.setTargetAtTime(volume, ctx.currentTime, 0.01);
+  liveEls.forEach(a => { try { a.volume = volume; } catch(e){} });
+  return volume;
+}
+// <audio> elements bypass the Web Audio graph, so they are tracked and set directly
+const liveEls = new Set();
 
 export function unlock(){ try { ac(); } catch(e){} }
 export function isOn(){ return enabled; }
@@ -204,13 +221,14 @@ export async function decode(arrayBuffer){
  * Streams a remote clip through an <audio> element (no CORS needed, unlike
  * decodeAudioData). Used for the charts mode's preview URLs.
  */
-export function playUrl(url, { from = 0, until = 3, gain = 0.85 } = {}){
+export function playUrl(url, { from = 0, until = 3, gain = 1 } = {}){
   if (!enabled) return { stop(){} };
   const a = new Audio();
   a.crossOrigin = 'anonymous';
   a.preload = 'auto';
-  a.volume = gain;
+  a.volume = Math.max(0, Math.min(1, gain * volume));
   a.src = url;
+  liveEls.add(a);
   let stopper = null;
   const begin = () => {
     try { a.currentTime = from; } catch(e){}
@@ -221,7 +239,7 @@ export function playUrl(url, { from = 0, until = 3, gain = 0.85 } = {}){
   else a.addEventListener('loadedmetadata', begin, { once:true });
   return {
     el: a,
-    stop(){ clearTimeout(stopper); try { a.pause(); } catch(e){} }
+    stop(){ clearTimeout(stopper); try { a.pause(); } catch(e){} liveEls.delete(a); }
   };
 }
 

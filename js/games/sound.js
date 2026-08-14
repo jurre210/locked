@@ -79,6 +79,19 @@ const songless = {
 
       /* --- transport --- */
       const playBtn = el('button', { class:'sl-play', title:'play', html:'&#9654;' });
+      // Previews are mastered far louder than the synth, so this lives next to
+      // the play button rather than buried in a settings panel.
+      const vol = el('input', { class:'slider', type:'range', min:0, max:100,
+        value: Math.round(api.audio.getVolume() * 100), 'aria-label':'volume' });
+      const volPct = el('span', { class:'sl-vol-num', text: Math.round(api.audio.getVolume() * 100) + '%' });
+      vol.oninput = () => {
+        const v = api.audio.setVolume(+vol.value / 100);
+        volPct.textContent = Math.round(v * 100) + '%';
+        vol.style.setProperty('--track', `linear-gradient(90deg,#fff ${vol.value}%,rgba(255,255,255,.18) ${vol.value}%)`);
+      };
+      vol.oninput();
+      const volRow = el('div', { class:'sl-vol' },
+        el('span', { class:'sl-vol-ico', text:'♪' }), vol, volPct);
       const stopAudio = () => { handle?.stop(); handle = null; playBtn.classList.remove('playing'); };
 
       const hear = (secs = unlocked()) => {
@@ -186,7 +199,8 @@ const songless = {
 
       paintHud(); paintRows(); paintSkip(); paintBar(0);
       stage.replaceChildren(hud, el('div', { class:'sl' },
-        guesses, track, playBtn,
+        guesses, track,
+        el('div', { class:'sl-transport' }, playBtn, volRow),
         el('div', { class:'sl-bottom' }, search, skipBtn),
         step === STEPS.length - 1 ? el('div', { class:'hint', text:song.hint }) : null
       ));

@@ -366,6 +366,16 @@ body.playing #bg{ opacity:.34; }
 .sl-play:active{ transform:scale(.95); }
 .sl-play.playing{ box-shadow:0 0 0 14px rgba(255,255,255,.10); }
 
+.sl-transport{ display:flex; align-items:center; gap:18px; width:100%; justify-content:center; }
+.sl-vol{ display:flex; align-items:center; gap:9px; width:min(190px,42%); }
+.sl-vol-ico{ font-size:13px; color:var(--dim); }
+.sl-vol .slider{ height:20px; flex:1 1 auto; }
+.sl-vol .slider::-webkit-slider-runnable-track{ height:5px; border-radius:3px; }
+.sl-vol .slider::-webkit-slider-thumb{ width:14px; height:14px; margin-top:-4.5px; border-width:1px; }
+.sl-vol .slider::-moz-range-track{ height:5px; border-radius:3px; }
+.sl-vol .slider::-moz-range-thumb{ width:14px; height:14px; border-width:1px; }
+.sl-vol-num{ font-family:var(--mono); font-size:11px; color:var(--dimmer); width:34px; text-align:right; }
+
 .sl-bottom{ display:flex; gap:8px; width:100%; }
 .sl-search{ position:relative; flex:1 1 auto; }
 .sl-search input{

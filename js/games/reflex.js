@@ -79,11 +79,17 @@ const reaction = {
 /* =================================================================== */
 const aim = {
   key:'aim', name:'aim', cat:'reflex', family:'aim',
-  blurb:'Thirty targets, one at a time, shrinking. Go.',
-  rule:'Hit thirty targets as fast as you can. They get smaller. Misses cost you.',
+  blurb:'Targets, one at a time, shrinking. Go.',
+  rule:'Hit every target as fast as you can. They get smaller. Misses cost you.',
   unit:'ms', higherBetter:false,
+  levels:['easy','normal','hard'],
   mount(stage, api){
-    const N = 30; let hits = 0, misses = 0, t0 = 0, first = 0;
+    const L = {
+      easy:   { n:20, big:100, shrink:1.0, floor:44, anchors:[1050, 420] },
+      normal: { n:30, big:82,  shrink:1.7, floor:26, anchors:[900, 330] },
+      hard:   { n:40, big:66,  shrink:1.1, floor:16, anchors:[800, 280] }
+    }[api.level] || {};
+    const N = L.n; let hits = 0, misses = 0, t0 = 0, first = 0;
     const zone = el('div', { class:'zone' });
     const hud = el('div', { class:'hud' });
     const paint = () => hud.replaceChildren(
@@ -93,7 +99,7 @@ const aim = {
     );
     let dot = null;
     const spawn = () => {
-      const size = clamp(78 - hits * 1.7, 22, 78);
+      const size = clamp(L.big - hits * L.shrink, L.floor, L.big);
       dot?.remove();
       dot = el('div', { class:'target', style:{
         left: rnd(8, 92)+'%', top: rnd(10, 90)+'%', width:size+'px', height:size+'px',
@@ -119,7 +125,7 @@ const aim = {
       const per = total / N;
       const penalty = misses * 90;
       const eff = per + penalty / N;
-      api.finish(Math.round(per), curve(eff, 900, 330), { label:'ms per target', higherBetter:false, raw: Math.round(per),
+      api.finish(Math.round(per), curve(eff, L.anchors[0], L.anchors[1]), { label:'ms per target', higherBetter:false, raw: Math.round(per),
         breakdown:[['total', (total/1000).toFixed(1)+'s'], ['misses', String(misses)],
                    ['accuracy', Math.round(N/(N+misses)*100)+'%']] });
     };
@@ -132,11 +138,19 @@ const aim = {
 /* =================================================================== */
 const track = {
   key:'track', name:'track', cat:'reflex', family:'aim',
-  blurb:'A circle wanders. Keep your cursor inside it for 25 seconds.',
-  rule:'Hold your cursor inside the circle. It speeds up. Score is the share of time you stayed on it.',
+  blurb:'A circle wanders. Keep your cursor inside it.',
+  rule:'Hold your cursor inside the circle. Score is the share of time you stayed on it.',
   unit:'%', higherBetter:true,
+  levels:['easy','normal','hard'],
   mount(stage, api){
-    const DUR = 25000;
+    // The old numbers were the "hard" column and then some — a 34px ring
+    // darting about was closer to a punishment than a game.
+    const L = {
+      easy:   { dur:20000, r0:86, r1:74, speed:.030, ramp:.020, wander:.018 },
+      normal: { dur:25000, r0:74, r1:58, speed:.038, ramp:.035, wander:.026 },
+      hard:   { dur:30000, r0:58, r1:36, speed:.055, ramp:.075, wander:.042 }
+    }[api.level] || {};
+    const DUR = L.dur;
     const zone = el('div', { class:'zone', style:{ cursor:'none' } });
     const ring = el('div', { style:{ position:'absolute', borderRadius:'50%', border:'2px solid #fff', transform:'translate(-50%,-50%)', transition:'background .12s' } });
     const cur = el('div', { style:{ position:'absolute', width:'8px', height:'8px', borderRadius:'50%', background:'var(--warn)', transform:'translate(-50%,-50%)', pointerEvents:'none' } });
@@ -159,14 +173,14 @@ const track = {
       api.life.frame(now => {
         const dt = Math.min(50, now - last); last = now;
         const el2 = performance.now() - t0;
-        const speed = (0.055 + el2 / DUR * 0.10) * dt / 16;
-        if (Math.random() < 0.035){ vx += rnd(-.7,.7); vy += rnd(-.7,.7); norm(); }
+        const speed = (L.speed + el2 / DUR * L.ramp) * dt / 16;
+        if (Math.random() < L.wander){ vx += rnd(-.7,.7); vy += rnd(-.7,.7); norm(); }
         px += vx * speed * 0.01 * 60; py += vy * speed * 0.01 * 60;
         if (px < .08 || px > .92){ vx *= -1; px = clamp(px,.08,.92); }
         if (py < .10 || py > .90){ vy *= -1; py = clamp(py,.10,.90); }
 
         const r = zone.getBoundingClientRect();
-        const rad = clamp(58 - el2/DUR*22, 34, 58);
+        const rad = L.r0 - (L.r0 - L.r1) * (el2 / DUR);
         ring.style.width = ring.style.height = rad*2 + 'px';
         ring.style.left = px*100 + '%'; ring.style.top = py*100 + '%';
         cur.style.left = mx*100 + '%'; cur.style.top = my*100 + '%';
@@ -186,7 +200,9 @@ const track = {
     };
     const end = (p) => {
       const pct = p * 100;
-      api.finish(Math.round(pct*10)/10, curve(pct, 40, 96), { label:'time on target %' });
+      // a good run on easy should not read the same as a good run on hard
+      const anchors = { easy:[55, 98], normal:[42, 94], hard:[28, 88] }[api.level] || [42, 94];
+      api.finish(Math.round(pct*10)/10, curve(pct, anchors[0], anchors[1]), { label:'time on target %' });
     };
     countdown(stage, api.life, api.sfx, begin);
   }
@@ -244,7 +260,13 @@ const dodge = {
   blurb:'Steer a dot through a room that is filling up with things that kill it.',
   rule:'Your dot follows the cursor. Touch nothing. Survive as long as you can.',
   unit:'s', higherBetter:true,
+  levels:['easy','normal','hard'],
   mount(stage, api){
+    const L = {
+      easy:   { r:[9,20],  s:[.10,.22], gap0:1100, gapMin:340, ramp:80, anchors:[10,75] },
+      normal: { r:[11,26], s:[.14,.32], gap0:900,  gapMin:220, ramp:60, anchors:[6,58] },
+      hard:   { r:[14,32], s:[.20,.44], gap0:700,  gapMin:150, ramp:44, anchors:[4,45] }
+    }[api.level] || {};
     const zone = el('div', { class:'zone', style:{ cursor:'none', minHeight:'min(380px,48vh)' } });
     const you = el('div', { style:{ position:'absolute', width:'14px', height:'14px', borderRadius:'50%', background:'#fff', transform:'translate(-50%,-50%)', boxShadow:'0 0 14px rgba(255,255,255,.7)' } });
     const hud = el('div', { class:'hud' });
@@ -254,7 +276,7 @@ const dodge = {
 
     const spawn = () => {
       const edge = irnd(0,3);
-      const b = { r: rnd(11, 26), s: rnd(.14, .32) };
+      const b = { r: rnd(L.r[0], L.r[1]), s: rnd(L.s[0], L.s[1]) };
       if (edge === 0){ b.x = -.06; b.y = rnd(0,1); }
       if (edge === 1){ b.x = 1.06; b.y = rnd(0,1); }
       if (edge === 2){ b.y = -.06; b.x = rnd(0,1); }
@@ -275,13 +297,13 @@ const dodge = {
         mx = clamp((e.clientX - r.left) / r.width, 0, 1);
         my = clamp((e.clientY - r.top) / r.height, 0, 1);
       });
-      let last = performance.now(), nextSpawn = 600;
+      let last = performance.now(), nextSpawn = L.gap0 * .7;
       api.life.frame(now => {
         if (!alive) return false;
         const dt = Math.min(48, now - last); last = now;
         const age = now - t0;
         nextSpawn -= dt;
-        if (nextSpawn <= 0){ spawn(); nextSpawn = clamp(900 - age/60, 190, 900); }
+        if (nextSpawn <= 0){ spawn(); nextSpawn = clamp(L.gap0 - age / L.ramp, L.gapMin, L.gap0); }
         const r = zone.getBoundingClientRect();
         you.style.left = mx*100+'%'; you.style.top = my*100+'%';
         for (let i = balls.length - 1; i >= 0; i--){
@@ -303,7 +325,7 @@ const dodge = {
       zone.classList.add('shake');
       api.sfx.bad();
       const s = age/1000;
-      api.finish(Math.round(s*10)/10, curve(s, 6, 60), { label:'seconds survived' });
+      api.finish(Math.round(s*10)/10, curve(s, L.anchors[0], L.anchors[1]), { label:'seconds survived' });
     };
     countdown(stage, api.life, api.sfx, begin);
   }

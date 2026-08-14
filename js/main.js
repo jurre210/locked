@@ -33,8 +33,9 @@ let activeCat = localStorage.getItem('locked.cat') || 'all';
 /* result overlay                                                     */
 /* ------------------------------------------------------------------ */
 function showResult(game, stage, value, q, opts = {}){
-  const { label = game.unit || '', breakdown = null, higherBetter = game.higherBetter !== false, raw = null } = opts;
-  const pb = S.submit(game.key, raw ?? value, q, higherBetter);
+  const { label = game.unit || '', breakdown = null, higherBetter = game.higherBetter !== false, raw = null, level = null } = opts;
+  const key = recKey(game, level);
+  const pb = S.submit(key, raw ?? value, q, higherBetter);
   const v = verdict(q, game.family || game.cat);
 
   if (q >= 0.97) A.sfx.perfect();
@@ -43,8 +44,9 @@ function showResult(game, stage, value, q, opts = {}){
   else A.sfx.over();
   if (q >= 0.68) BG.pulse(q);
 
-  const r = S.rec(game.key);
+  const r = S.rec(key);
   const again = el('button', { class:'btn', text:'again' });
+  const swap = game.levels ? el('button', { class:'btn ghost', text:'change difficulty' }) : null;
   const next = el('button', { class:'btn ghost', text:'next game' });
   const home = el('button', { class:'btn ghost', text:'all games' });
 
@@ -56,11 +58,12 @@ function showResult(game, stage, value, q, opts = {}){
       breakdown.map(b => el('div', {}, b[0], el('b', { text: b[1] })))) : null,
     pb ? el('div', { class:'pb', text:'— personal best —' }) : null,
     r.best != null && !pb ? el('div', { class:'score', style:{ marginTop:'8px', opacity:.6 }, html:`best <b>${r.best}</b>` }) : null,
-    el('div', { class:'row' }, again, next, home)
+    el('div', { class:'row' }, again, swap, next, home)
   );
   stage.append(card);
 
-  again.onclick = () => { A.sfx.click(); start(game); };
+  again.onclick = () => { A.sfx.click(); start(game, true); };
+  if (swap) swap.onclick = () => { A.sfx.click(); start(game, false); };
   next.onclick = () => { A.sfx.click(); const o = GAMES.filter(g => g.key !== game.key); location.hash = '#/' + pick(o).key; };
   home.onclick = () => { A.sfx.click(); location.hash = '#/'; };
 
@@ -73,7 +76,40 @@ function showResult(game, stage, value, q, opts = {}){
 /* ------------------------------------------------------------------ */
 /* game screen                                                        */
 /* ------------------------------------------------------------------ */
-function start(game){
+/* ------------------------------------------------------------------ */
+/* difficulty                                                         */
+/* ------------------------------------------------------------------ */
+const LEVEL_BLURB = {
+  easy:   'Roomier, slower, more forgiving.',
+  normal: 'The way it is meant to be played.',
+  hard:   'Tighter margins and no mercy.'
+};
+const levelOf = g => localStorage.getItem('locked.lvl.' + g.key) || 'normal';
+const setLevel = (g, l) => localStorage.setItem('locked.lvl.' + g.key, l);
+/** Records are kept per difficulty — one shared best would be meaningless. */
+const recKey = (g, l) => (g.levels && l && l !== 'normal') ? `${g.key}@${l}` : g.key;
+
+function askLevel(game, stage, done){
+  const cur = levelOf(game);
+  stage.replaceChildren(
+    el('div', { class:'hint', text:'how hard do you want it?' }),
+    el('div', { class:'pill-row' }, game.levels.map(l => {
+      const b = el('button', { class:'pill' + (l === cur ? ' on' : ''), text:l });
+      b.onclick = () => { setLevel(game, l); A.sfx.click(); done(l); };
+      return b;
+    })),
+    el('div', { class:'hint', style:{ opacity:.6 }, text: LEVEL_BLURB[cur] || '' }),
+    el('div', { class:'hint', style:{ opacity:.5, fontSize:'12px' }, text:'Each difficulty keeps its own best score.' })
+  );
+  stage.querySelectorAll('.pill').forEach((b, i) => {
+    b.onmouseenter = () => {
+      A.sfx.hover();
+      stage.querySelectorAll('.hint')[1].textContent = LEVEL_BLURB[game.levels[i]] || '';
+    };
+  });
+}
+
+function start(game, replay = false){
   life.kill();
   life = new Life();
   A.unlock();
@@ -90,23 +126,31 @@ function start(game){
   BG.theme(game.cat);
   document.body.classList.add('playing');
 
-  const api = {
-    life,
-    sfx: A.sfx,
-    audio: A,
-    stage,
-    finish(value, q, opts){ showResult(game, stage, value, q, opts); },
-    setRule(t){ head.querySelector('.rule').textContent = t; }
+  const launch = (level) => {
+    const api = {
+      life,
+      sfx: A.sfx,
+      audio: A,
+      stage,
+      level,
+      finish(value, q, opts){ showResult(game, stage, value, q, { ...opts, level }); },
+      setRule(t){ head.querySelector('.rule').textContent = t; }
+    };
+    if (level) crumb.innerHTML = `<b>${game.name}</b> · ${game.cat} · ${level}`;
+    game.mount(stage, api);
   };
-  game.mount(stage, api);
+
+  // "again" reuses the chosen difficulty rather than re-asking every time
+  if (game.levels && !replay) askLevel(game, stage, launch);
+  else launch(game.levels ? levelOf(game) : null);
 }
 
 /* ------------------------------------------------------------------ */
 /* home                                                               */
 /* ------------------------------------------------------------------ */
 function bestLine(g){
-  const r = S.rec(g.key);
-  if (!r.plays) return 'not played';
+  const r = S.rec(recKey(g, g.levels ? levelOf(g) : null));
+  if (!r.plays) return g.levels ? `not played · ${levelOf(g)}` : 'not played';
   return `best <b>${r.best}${g.unit ? ' ' + g.unit : ''}</b> · ${r.plays} ${r.plays === 1 ? 'run' : 'runs'}`;
 }
 
@@ -214,14 +258,15 @@ function paintDock(activeKey){
 
 function stats(){
   const rating = S.rating();
-  const rows = GAMES.map(g => {
-    const r = S.rec(g.key);
+  const rows = GAMES.flatMap(g => (g.levels || [null]).map(l => {
+    const r = S.rec(recKey(g, l));
+    if (l && !r.plays) return null;          // only list difficulties actually played
     return el('div', { class:'stat-row' },
-      el('span', { text:g.name }),
+      el('span', { text: g.name + (l && l !== 'normal' ? ' · ' + l : '') }),
       el('span', { class:'m', text: r.plays ? `${r.plays} runs · ${Math.round((r.bestQ||0)*100)}/100` : '—' }),
       el('span', { class:'v', text: r.plays ? `${r.best}${g.unit ? ' ' + g.unit : ''}` : 'not played' })
     );
-  });
+  })).filter(Boolean);
   modalBody.replaceChildren(
     el('h3', { text: rating != null ? `rating ${rating}` : 'no record yet' }),
     el('p', { class:'sub', text: rating != null

@@ -69,6 +69,31 @@ export const shuffle = a => { const x = a.slice(); for (let i = x.length - 1; i 
 export const pick = a => a[Math.floor(Math.random() * a.length)];
 export const sample = (a, n) => shuffle(a).slice(0, n);
 
+/**
+ * Eases a number from 0 up to `to` and writes it into `node`.
+ * Uses its own timer as well as rAF so a throttled tab still lands on the
+ * final value instead of freezing mid-count.
+ */
+export function countUp(node, to, { ms = 900, decimals = 1, suffix = '', life = null } = {}){
+  const start = performance.now();
+  const write = v => { node.textContent = v.toFixed(decimals) + suffix; };
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  write(0);
+  const step = () => {
+    const t = Math.min(1, (performance.now() - start) / ms);
+    write(to * ease(t));
+    return t < 1;
+  };
+  if (life){
+    life.frame(step);
+    life.after(() => write(to), ms + 40);
+  } else {
+    const loop = () => { if (step()) requestAnimationFrame(loop); else write(to); };
+    requestAnimationFrame(loop);
+    setTimeout(() => write(to), ms + 40);
+  }
+}
+
 export function fmt(n, d = 0){
   return Number(n).toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d });
 }

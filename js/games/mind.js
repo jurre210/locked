@@ -185,10 +185,13 @@ const maths = {
 const nback = {
   key:'nback', name:'n-back', cat:'mind', family:'memory',
   blurb:'Letters go past. Say when one matches the one from two steps ago.',
-  rule:'A letter appears every two seconds. Hit space whenever it is the same as the letter two before it. Thirty letters.',
+  rule:'A letter appears every couple of seconds. Hit space whenever it matches the one N steps back.',
   unit:'%', higherBetter:true,
+  levels:['easy','normal','hard'],
   mount(stage, api){
-    const N = 2, TOTAL = 30, GAP = 2000;
+    const L = { easy:{ n:1, gap:2400 }, normal:{ n:2, gap:2000 }, hard:{ n:3, gap:1800 } }[api.level] || { n:2, gap:2000 };
+    const N = L.n, TOTAL = 30, GAP = L.gap;
+    api.setRule(`A letter appears every ${(GAP/1000).toFixed(1)} seconds. Hit space whenever it is the same as the letter ${N === 1 ? 'immediately before it' : N + ' before it'}. Thirty letters.`);
     const LETTERS = 'BCDFGHKLMNPQRSTVZ'.split('');
     const seq = [];
     for (let i = 0; i < TOTAL; i++){
@@ -229,15 +232,20 @@ const nback = {
     const end = () => {
       const targets = seq.filter((c, k) => k >= N && c === seq[k-N]).length;
       const acc = clamp((hits - fa * .8) / Math.max(1, targets), 0, 1) * 100;
-      api.finish(Math.round(acc), curve(acc, 30, 96), { label:'accuracy %',
+      const anchors = { easy:[45, 98], normal:[30, 96], hard:[20, 92] }[api.level] || [30, 96];
+      api.finish(Math.round(acc), curve(acc, anchors[0], anchors[1]), { label:'accuracy %',
         breakdown:[['matches', `${hits}/${targets}`], ['false alarms', String(fa)], ['missed', String(misses)]] });
     };
 
     api.life.on(window, 'keydown', e => { if (e.code === 'Space'){ e.preventDefault(); hit(); } });
     const zone = el('div', { class:'zone', style:{ display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:'10px', cursor:'pointer', minHeight:'min(240px,34vh)' } }, big, feed);
     api.life.on(zone, 'pointerdown', hit);
-    stage.replaceChildren(hud, zone, el('div', { class:'hint', html:'<span class="kbd">space</span> when it matches two back' }));
-    countdown(stage, api.life, api.sfx, () => { stage.replaceChildren(hud, zone, el('div', { class:'hint', html:'<span class="kbd">space</span> when it matches two back' })); step(); api.life.every(step, GAP); });
+    const legend = () => el('div', { class:'hint', html:`<span class="kbd">space</span> when it matches ${N} back` });
+    stage.replaceChildren(hud, zone, legend());
+    countdown(stage, api.life, api.sfx, () => {
+      stage.replaceChildren(hud, zone, legend());
+      step(); api.life.every(step, GAP);
+    });
   }
 };
 
