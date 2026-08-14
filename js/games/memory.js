@@ -1,4 +1,4 @@
-import { el, clamp, irnd, pick, shuffle, sample, countdown } from '../core/ui.js';
+import { el, clamp, irnd, pick, shuffle, sample, countdown, cellSize } from '../core/ui.js';
 
 const curve = (v, worst, best) => clamp((v - worst) / (best - worst), 0, 1);
 
@@ -71,11 +71,13 @@ const chimp = {
   unit:'n', higherBetter:true,
   mount(stage, api){
     let n = 4, lives = 2;
-    const COLS = 8, ROWS = 5;
+    // 8 columns of 30px is unplayable with a thumb — go taller and narrower
+    const narrow = window.innerWidth < 620;
+    const COLS = narrow ? 5 : 8, ROWS = narrow ? 7 : 5;
     const round = () => {
       const spots = sample(Array.from({length:COLS*ROWS}, (_,i)=>i), n);
       let next = 1, hidden = false;
-      const px = clamp(Math.floor(Math.min(720, window.innerWidth*.9)/COLS) - 6, 38, 88);
+      const px = cellSize(COLS, { maxPx:88, minPx:40, vFrac: narrow ? .50 : .34 });
       const grid = el('div', { class:'pad', style:{ gridTemplateColumns:`repeat(${COLS},${px}px)` } });
       const nodes = [];
       for (let i = 0; i < COLS*ROWS; i++){
@@ -170,7 +172,7 @@ const pattern = {
   mount(stage, api){
     const SIZE = 5;
     let len = 3, accepting = false, seq = [], idx = 0;
-    const px = clamp(Math.floor(Math.min(460, window.innerHeight*.44)/SIZE) - 6, 42, 96);
+    const px = cellSize(SIZE, { maxPx:96, minPx:40, vFrac:.44 });
     const cells = [];
     const grid = el('div', { class:'pad', style:{ gridTemplateColumns:`repeat(${SIZE},${px}px)` } });
     for (let i = 0; i < SIZE*SIZE; i++){
@@ -224,7 +226,7 @@ const pairs = {
     const deck = shuffle([...ICONS, ...ICONS]);
     let open = [], flips = 0, cleared = 0, busy = false, t0 = 0;
     const cols = 6;
-    const px = clamp(Math.floor(Math.min(620, window.innerWidth*.88)/cols) - 8, 46, 104);
+    const px = cellSize(cols, { maxPx:104, minPx:40, vFrac:.34 });
     const grid = el('div', { class:'pad', style:{ gridTemplateColumns:`repeat(${cols},${px}px)` } });
     const hud = el('div', { class:'hud' });
     const paint = () => hud.replaceChildren(

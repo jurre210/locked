@@ -1,4 +1,4 @@
-import { el, clamp, rnd, irnd, pick, shuffle, fmt, countdown } from '../core/ui.js';
+import { el, clamp, rnd, irnd, pick, shuffle, fmt, countdown, cellSize } from '../core/ui.js';
 import { nudge } from '../core/feedback.js';
 
 /* =================================================================== */
@@ -153,7 +153,7 @@ const shade = {
       const delta = Math.max(1.8, 38 * Math.pow(0.915, level));
       const base = `hsl(${hue} ${sat}% ${lig}%)`;
       const diff = `hsl(${hue} ${sat}% ${clamp(lig + (Math.random() < .5 ? -delta : delta), 8, 92)}%)`;
-      const px = clamp(Math.round(Math.min(440, window.innerHeight * .42) / size) - 6, 26, 120);
+      const px = cellSize(size, { maxPx:120, minPx:26 });
 
       const pad = el('div', { class:'pad', style:{ gridTemplateColumns:`repeat(${size},${px}px)` } });
       for (let i = 0; i < n; i++){
@@ -353,7 +353,7 @@ const odd = {
       const g = pick(GLYPHS);
       const rot = irnd(0, 359);
       const drift = Math.max(9, 40 - level * 1.2);
-      const px = clamp(Math.round(Math.min(440, window.innerHeight * .40) / size) - 5, 30, 110);
+      const px = cellSize(size, { maxPx:110, minPx:30, vFrac:.40 });
       const pad = el('div', { class:'pad', style:{ gridTemplateColumns:`repeat(${size},${px}px)` } });
       for (let k = 0; k < n; k++){
         const c = el('button', { class:'cell', style:{
@@ -409,7 +409,7 @@ const gradient = {
     const t0 = performance.now();
 
     const paint = () => {
-      const px = clamp(Math.floor(Math.min(760, window.innerWidth * .86) / n) - 8, 40, 96);
+      const px = cellSize(n, { maxPx:96, minPx:26, vFrac:.30 });
       const row = el('div', { class:'pad', style:{ gridTemplateColumns:`repeat(${n},${px}px)` } });
       order.forEach((L, i) => {
         const c = el('button', { class:'cell' + (i === sel ? ' lit' : ''), style:{

@@ -3,7 +3,51 @@
 25 tiny browser games in the dialed.gg mould: pure black, one giant lowercase word,
 one rule, one score, and a verdict that is rude about it.
 
-## Run it
+## Put it online
+
+The site is static — no build step, no server — so any static host works. Every path is
+relative, so it is happy in a subdirectory like `username.github.io/locked/`.
+
+**The easy way.** Install the GitHub CLI once, sign in, then double-click `publish.cmd`:
+
+```bash
+winget install GitHub.cli
+```
+
+```bash
+gh auth login
+```
+
+`publish.cmd` creates the repo, pushes, switches Pages on and prints the URL. Run it
+again any time to push updates.
+
+**By hand.** Make an empty repo called `locked` on github.com, then:
+
+```bash
+git remote add origin https://github.com/YOUR-NAME/locked.git
+```
+
+```bash
+git push -u origin main
+```
+
+Then Settings → Pages → Source: *Deploy from a branch* → `main` / `root`. The first
+build takes a minute or two; after that it is live at
+`https://YOUR-NAME.github.io/locked/`.
+
+The commit author is currently a placeholder. To use your own:
+
+```bash
+git config user.name "your name"
+```
+
+**Netlify or Cloudflare Pages** work too — drag the folder onto
+[app.netlify.com/drop](https://app.netlify.com/drop), or point Cloudflare Pages at the
+repo with an empty build command and `/` as the output directory.
+
+Note that `server.js` and `start.cmd` are only for running it locally; hosts ignore them.
+
+## Run it locally
 
 Double-click **locked** on the desktop or in the Start menu — it boots the server and
 opens the browser. From a terminal:

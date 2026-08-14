@@ -52,6 +52,17 @@ export function seededSample(list, n, seed){
 }
 
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/**
+ * Square cell size for an n-column board, fitted to whatever room the phone
+ * (or window) actually has. Keeps dense grids on-screen instead of letting a
+ * fixed floor push them off the right edge.
+ */
+export function cellSize(cols, { gap = 8, maxPx = 110, minPx = 22, sidePad = 30, vFrac = 0.42 } = {}){
+  const byWidth = (Math.min(window.innerWidth, 1180) - sidePad - gap * (cols - 1)) / cols;
+  const byHeight = (window.innerHeight * vFrac - gap * (cols - 1)) / cols;
+  return Math.max(minPx, Math.min(maxPx, Math.floor(Math.min(byWidth, byHeight))));
+}
 export const rnd = (a, b) => a + Math.random() * (b - a);
 export const irnd = (a, b) => Math.floor(rnd(a, b + 1));
 export const shuffle = a => { const x = a.slice(); for (let i = x.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [x[i], x[j]] = [x[j], x[i]]; } return x; };
