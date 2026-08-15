@@ -94,6 +94,23 @@ const songless = {
         el('span', { class:'sl-vol-ico', text:'♪' }), vol, volPct);
       const stopAudio = () => { handle?.stop(); handle = null; playBtn.classList.remove('playing'); };
 
+      // one playhead for the whole clip, so an unlock can push the end out
+      let playT0 = 0, playLimit = 0, playing = false, barLoop = false;
+
+      const runBar = () => {
+        if (barLoop) return;
+        barLoop = true;
+        api.life.frame(() => {
+          const p = (performance.now() - playT0) / 1000;
+          if (p >= playLimit){
+            paintBar(playLimit); playBtn.classList.remove('playing');
+            playing = false; barLoop = false;
+            return false;
+          }
+          paintBar(p);
+        });
+      };
+
       const hear = (secs = unlocked()) => {
         stopAudio();
         handle = song.kind === 'buffer'
@@ -102,13 +119,21 @@ const songless = {
             ? api.audio.playUrl(song.url, { from: song.offset || 0, until: (song.offset || 0) + secs })
             : api.audio.playMelody(song.notes, { bpm: song.bpm, from: 0, until: secs });
         playBtn.classList.add('playing');
-        const t0 = performance.now();
-        api.life.frame(() => {
-          const p = (performance.now() - t0) / 1000;
-          if (p >= secs){ paintBar(secs); playBtn.classList.remove('playing'); return false; }
-          paintBar(p);
-        });
+        playT0 = performance.now(); playLimit = secs; playing = true;
+        runBar();
       };
+
+      /** Unlocking more time mid-play carries on instead of starting over. */
+      const hearMore = (secs = unlocked()) => {
+        const elapsed = (performance.now() - playT0) / 1000;
+        if (!playing || !handle?.extend || elapsed >= playLimit) return hear(secs);
+        const offset = song.kind === 'synth' ? 0 : (song.offset || 0);
+        handle.extend(offset + secs);
+        playLimit = secs;
+        playBtn.classList.add('playing');
+        runBar();
+      };
+
       playBtn.onclick = () => hear();
 
       /* --- search + autocomplete --- */
@@ -158,9 +183,12 @@ const songless = {
         step++;
         if (step >= STEPS.length) return reveal(false);
         inp.value = ''; sug.hidden = true; matches = [];
-        paintRows(); paintSkip(); paintHud(); paintBar(0);
+        paintRows(); paintSkip(); paintHud();
+        // repaint at the *current* playhead, not 0 — the newly opened segment
+        // has to light up straight away without rewinding the bar
+        paintBar(playing ? Math.min((performance.now() - playT0) / 1000, playLimit) : 0);
         api.sfx.miss();
-        hear();
+        hearMore();          // carry on playing into the newly unlocked seconds
       };
 
       const submit = (m) => {

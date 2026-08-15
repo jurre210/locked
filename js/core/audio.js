@@ -152,43 +152,61 @@ export function playMelody(notes, { bpm = 110, gain = 0.16, from = 0, until = In
     return { n, beats: parseFloat(b || 1) };
   });
   const stops = [];
-  let t = 0, total = 0;
   const t0 = c.currentTime + 0.06;
-  let bassIdx = 0;
-  for (const p of parts){
-    const dur = p.beats * beat;
-    const f = noteFreq(p.n);
-    if (f && t + dur > from && t < until && enabled){
-      const start = t0 + Math.max(0, t - from);
-      const len = Math.min(dur, until - t) * 0.94;
-      // plucked lead: two detuned voices + a soft sine body
-      for (const [ty, dt, g] of [[voice, -6, gain], ['sine', 6, gain * .55]]){
-        const o = c.createOscillator(); const gg = c.createGain();
-        o.type = ty; o.frequency.value = f; o.detune.value = dt;
-        gg.gain.setValueAtTime(0.0001, start);
-        gg.gain.exponentialRampToValueAtTime(g, start + 0.012);
-        gg.gain.exponentialRampToValueAtTime(0.0001, start + Math.max(.08, len));
-        o.connect(gg); gg.connect(master);
-        o.start(start); o.stop(start + Math.max(.1, len) + .05);
-        stops.push(o);
+  const total = parts.reduce((s, p) => s + p.beats * beat, 0);
+  let scheduledTo = from;
+
+  /* Notes are laid onto one fixed timeline anchored at t0, so a later
+     segment can be appended without disturbing what is already sounding.
+     That is what lets a skip extend the clip instead of restarting it. */
+  const schedule = (segFrom, segTo) => {
+    let t = 0, idx = 0;
+    for (const p of parts){
+      const dur = p.beats * beat;
+      const f = noteFreq(p.n);
+      // only notes that *begin* inside this segment — anything straddling the
+      // boundary was already scheduled by the previous segment
+      const first = segFrom <= 0 ? (t + dur > segFrom) : (t >= segFrom - 1e-6);
+      if (f && enabled && first && t < segTo){
+        const start = t0 + Math.max(0, t - from);
+        const len = Math.min(dur, segTo - t) * 0.94;
+        // plucked lead: two detuned voices + a soft sine body
+        for (const [ty, dt, g] of [[voice, -6, gain], ['sine', 6, gain * .55]]){
+          const o = c.createOscillator(); const gg = c.createGain();
+          o.type = ty; o.frequency.value = f; o.detune.value = dt;
+          gg.gain.setValueAtTime(0.0001, start);
+          gg.gain.exponentialRampToValueAtTime(g, start + 0.012);
+          gg.gain.exponentialRampToValueAtTime(0.0001, start + Math.max(.08, len));
+          o.connect(gg); gg.connect(master);
+          o.start(start); o.stop(start + Math.max(.1, len) + .05);
+          stops.push(o);
+        }
+        // simple root-ish bass pulse every other note
+        if (bass && idx % 2 === 0){
+          const o = c.createOscillator(); const gg = c.createGain();
+          o.type = 'sine'; o.frequency.value = f / 4;
+          gg.gain.setValueAtTime(0.0001, start);
+          gg.gain.exponentialRampToValueAtTime(gain * .5, start + .02);
+          gg.gain.exponentialRampToValueAtTime(0.0001, start + Math.max(.2, len * 1.4));
+          o.connect(gg); gg.connect(master);
+          o.start(start); o.stop(start + Math.max(.25, len * 1.5) + .05);
+          stops.push(o);
+        }
       }
-      // simple root-ish bass pulse every 2 beats
-      if (bass && bassIdx % 2 === 0){
-        const o = c.createOscillator(); const gg = c.createGain();
-        o.type = 'sine'; o.frequency.value = f / 4;
-        gg.gain.setValueAtTime(0.0001, start);
-        gg.gain.exponentialRampToValueAtTime(gain * .5, start + .02);
-        gg.gain.exponentialRampToValueAtTime(0.0001, start + Math.max(.2, len * 1.4));
-        o.connect(gg); gg.connect(master);
-        o.start(start); o.stop(start + Math.max(.25, len * 1.5) + .05);
-        stops.push(o);
-      }
-      bassIdx++;
+      if (f) idx++;
+      t += dur;
     }
-    t += dur; total = t;
-  }
+    scheduledTo = Math.max(scheduledTo, segTo);
+  };
+
+  schedule(from, until);
+
   return {
     duration: total,
+    /** Play on into `newUntil` without interrupting what is already sounding. */
+    extend(newUntil){
+      if (newUntil > scheduledTo) schedule(scheduledTo, newUntil);
+    },
     stop(){ stops.forEach(o => { try { o.stop(); } catch(e){} }); }
   };
 }
@@ -201,7 +219,7 @@ export function melodyDuration(notes, bpm = 110){
 
 /** Raw audio-file playback (for the "use my own music" mode). */
 export function playBuffer(buffer, { from = 0, until = 3, gain = 0.9 } = {}){
-  if (!enabled) return { stop(){} };
+  if (!enabled) return { stop(){}, extend(){} };
   const c = ac();
   const src = c.createBufferSource();
   src.buffer = buffer;
@@ -209,8 +227,20 @@ export function playBuffer(buffer, { from = 0, until = 3, gain = 0.9 } = {}){
   g.gain.setValueAtTime(0.0001, c.currentTime);
   g.gain.exponentialRampToValueAtTime(gain, c.currentTime + 0.03);
   src.connect(g); g.connect(master);
-  src.start(0, from, Math.max(0.1, until - from));
-  return { stop(){ try { src.stop(); } catch(e){} } };
+  // started open-ended and stopped on a schedule, so the stop can be moved
+  // later — a fixed start() duration could not be extended.
+  const t0 = c.currentTime;
+  src.start(t0, from);
+  let limit = until;
+  src.stop(t0 + Math.max(0.1, limit - from));
+  return {
+    extend(newUntil){
+      if (newUntil <= limit) return;
+      limit = newUntil;
+      try { src.stop(t0 + Math.max(0.1, limit - from)); } catch(e){}
+    },
+    stop(){ try { src.stop(); } catch(e){} }
+  };
 }
 
 export async function decode(arrayBuffer){
@@ -229,16 +259,27 @@ export function playUrl(url, { from = 0, until = 3, gain = 1 } = {}){
   a.volume = Math.max(0, Math.min(1, gain * volume));
   a.src = url;
   liveEls.add(a);
+  // The clip end is a timer rather than a fixed duration, so it can be pushed
+  // back later and the audio simply keeps playing.
   let stopper = null;
+  let startedAt = 0;
+  let limit = until;
+  const arm = () => {
+    clearTimeout(stopper);
+    const remaining = (limit - from) * 1000 - (startedAt ? performance.now() - startedAt : 0);
+    stopper = setTimeout(() => { try { a.pause(); } catch(e){} }, Math.max(120, remaining));
+  };
   const begin = () => {
     try { a.currentTime = from; } catch(e){}
     a.play().catch(() => {});
-    stopper = setTimeout(() => { a.pause(); }, Math.max(120, (until - from) * 1000));
+    startedAt = performance.now();
+    arm();
   };
   if (a.readyState >= 1) begin();
   else a.addEventListener('loadedmetadata', begin, { once:true });
   return {
     el: a,
+    extend(newUntil){ if (newUntil > limit){ limit = newUntil; arm(); } },
     stop(){ clearTimeout(stopper); try { a.pause(); } catch(e){} liveEls.delete(a); }
   };
 }
