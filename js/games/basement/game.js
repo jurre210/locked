@@ -6,7 +6,7 @@
  * case in the loop, so adding an item never means touching the loop.
  */
 import {
-  CELL, GRID_W, GRID_H, ROOM_X, ROOM_Y, ROOM_W, ROOM_H, VW, VH, THEMES
+  CELL, GRID_W, GRID_H, WALL, ROOM_X, ROOM_Y, ROOM_W, ROOM_H, VW, VH, THEMES
 } from './art.js';
 import { buildCharacter } from './mobs-art.js';
 import { Player } from './player.js';
@@ -429,7 +429,14 @@ export class Game {
   /* ---------------------------------------------------------------- */
   /* main loop                                                        */
   /* ---------------------------------------------------------------- */
-  update(dt){
+  /**
+   * @param {boolean} allowEdges whether one-shot inputs (bomb, active, card)
+   *   may fire this step. The loop runs several fixed steps per rendered frame
+   *   but the keyboard's edge flags only clear once per frame, so without this
+   *   a single tap spends up to five bombs.
+   */
+  update(dt, allowEdges = true){
+    this.allowEdges = allowEdges;
     if (this.over) { this.time += dt; this.tickCosmetics(dt); return; }
     this.time += dt;
     if (this.banner) this.banner.t -= dt;
@@ -500,10 +507,10 @@ export class Game {
       p.update(dt, inp);
       this.moveEntity(p, dt, { flying: !!p.flags.fly, spectral: !!p.flags.fly });
 
-      if (inp.active) p.useActive();
-      if (inp.bomb) this.dropBomb(p);
-      if (inp.card) this.useConsumable(p);
-      if (inp.drop && p.trinket){
+      if (inp.active && this.allowEdges) p.useActive();
+      if (inp.bomb && this.allowEdges) this.dropBomb(p);
+      if (inp.card && this.allowEdges) this.useConsumable(p);
+      if (inp.drop && this.allowEdges && p.trinket){
         const t = p.setTrinket(null);
         if (t) this.spawnPickup('trinket', p.x, p.y + 12, { trinket:t });
       }
@@ -639,8 +646,13 @@ export class Game {
         if (!door.open || door.locked) continue;
         if (door.hidden && !door.revealed) continue;
         const pos = DOOR_POS[dir];
-        const near = Math.abs(p.x - pos.x) < 22 && Math.abs(p.y - pos.y) < 22;
-        if (!near) continue;
+        // Door centres sit inside the wall, but players are clamped to the room
+        // interior — the closest reach is WALL/2 + radius, so the threshold along
+        // the travel axis has to clear the wall, not just a few pixels.
+        const vertical = dir === 'n' || dir === 's';
+        const along  = vertical ? Math.abs(p.y - pos.y) : Math.abs(p.x - pos.x);
+        const across = vertical ? Math.abs(p.x - pos.x) : Math.abs(p.y - pos.y);
+        if (along > WALL + 6 || across > 24) continue;
         const target = this.floor.rooms.get(door.to);
         if (!target) continue;
         this.travel(target, dir);

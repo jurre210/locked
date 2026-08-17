@@ -336,7 +336,9 @@ export class Player {
     }
 
     this.fireCd -= dt;
-    const canShoot = this.temp.berserk <= 0;
+    // written as a negation on purpose: temp.berserk is undefined until it is
+    // first set, and `undefined <= 0` is false, which silently disables firing
+    const canShoot = !(this.temp.berserk > 0);
 
     if (this.flags.charged && canShoot){
       // hold to charge, release to fire one big shot

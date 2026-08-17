@@ -9,152 +9,188 @@
 import { sprite, bake, compose } from './sprite.js';
 
 const O = '#191118';
-const T = '..............'; // 14 wide blank
+const T = '................'; // 16 wide blank
 
 /* ------------------------------------------------------------------ */
-/* head layers (14 x 12)                                               */
+/* head layers (16 x 14)                                               */
 /* ------------------------------------------------------------------ */
+/* l = lit skin, s = skin, d = shaded skin. The light sits top-left on
+   every layer so the head, hair and body agree about where it comes from. */
 const SKULL = [
-  '....oooooo....',
-  '..oossssssoo..',
-  '.osssssssssso.',
-  'osssssssssssso',
-  'osssssssssssso',
-  'osssssssssssso',
-  'osssssssssssso',
-  'osssssssssssso',
-  'odssssssssssdo',
-  '.oddssssssddo.',
-  '..oodddddd oo.'.slice(0, 14),
-  '....oooooo....'
+  '.....oooooo.....',
+  '...oolllllloo...',
+  '..ollllsssssso..',
+  '.ollllsssssssso.',
+  'ollllssssssssddo',
+  'olllssssssssdddo',
+  'ollsssssssssdddo',
+  'olsssssssssssddo',
+  'osssssssssssssdo',
+  'ossssssssssssddo',
+  'odssssssssssdddo',
+  '.odsssssssssddo.',
+  '..oddsssssdddo..',
+  '...ooddddddoo...'
 ];
 
 const HAIR = {
-  none: [T,T,T,T,T,T,T,T,T,T,T,T],
+  none: [T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   tuft: [
-    '.....ohho.....','...ohhhhhho...','..ohhhhhhhho..','.ohhg....ghho.',
-    T,T,T,T,T,T,T,T
+    '......ohho......','....oohhhhoo....','..oohhhhhhhhoo..','.ohhhhhhhhhhho..',
+    'ohg..........gho',T,T,T,T,T,T,T,T,T
   ],
   bowl: [
-    '....oooooo....','..oohhhhhhoo..','.ohhhhhhhhhho.','ohhhhhhhhhhhho',
-    'ohhg......ghho',T,T,T,T,T,T,T
+    '.....oooooo.....','...oohhhhhhoo...','..ohhhhhhhhhho..','.ohhhhhhhhhhhho.',
+    'ohhhhhhhhhhhhhho','ohhg........ghho',T,T,T,T,T,T,T,T
   ],
   braids: [
-    '....oooooo....','..oohhhhhhoo..','.ohhhhhhhhhho.','ohhg......ghho',
-    'oho........oho','oho........oho','ohho......ohho','.ogo......ogo.',
-    '.ogo......ogo.','..o........o..',T,T
+    '.....oooooo.....','...oohhhhhhoo...','..ohhhhhhhhhho..','.ohhhhhhhhhhhho.',
+    'ohhhhhhhhhhhhhho','ohg..........gho','oho..........oho','oho..........oho',
+    'ogo..........ogo','.o............o.',T,T,T,T
   ],
   spikes: [
-    '..o..oooo..o..','.oho.ohho.oho.','.ohhoohhoohho.','..ohhhhhhhho..',
-    '.ohhg....ghho.',T,T,T,T,T,T,T
+    '..o...oooo...o..','.oho.oohhoo.oho.','.ohhhoohhhhoohho','..ohhhhhhhhhho..',
+    '.ohg........gho.',T,T,T,T,T,T,T,T,T
   ],
   hood: [
-    '....oooooo....','..oohhhhhhoo..','.ohhhhhhhhhho.','ohhhhhhhhhhhho',
-    'ohhho......ohh'.slice(0,14),'ohho........oh'.slice(0,14),'oho..........o'.slice(0,14),'oho...........',
-    'ohho..........','ohhho.........','.ohhhoo.......','..ooooo.......'
+    '.....oooooo.....','...oohhhhhhoo...','..ohhhhhhhhhho..','.ohhhhhhhhhhhho.',
+    'ohhhhhhhhhhhhhho','ohhho........ohh','ohho..........oh','oho............o',
+    'oho.............','ohho............','ohhho...........','.ohhoo..........',
+    '..ooo...........',T
   ],
   mop: [
-    '...oooooooo...','..ohhhhhhhho..','.ohhhhhhhhhho.','ohhhhhhhhhhhho',
-    'ohgohgggohgoho','.o.o.....o.o..',T,T,T,T,T,T
+    '...oooooooooo...','..ohhhhhhhhhho..','.ohhhhhhhhhhhho.','ohhhhhhhhhhhhhho',
+    'ohho.ohho.ohho.o','.o..o.o..o.o..o.',T,T,T,T,T,T,T,T
   ]
 };
 
+/* w = eye white, e = iris. Whites are what stop the face reading as a skull. */
 const EYES = {
-  normal: [T,T,T,T,'...oo....oo...','...oeo...oeo..','...oo....oo...',T,T,T,T,T],
-  sad:    [T,T,T,'...oo....oo...','..oeeo..oeeo..','...oo....oo...',T,T,T,T,T,T],
-  wide:   [T,T,'...ooo..ooo...','..oeeeooeeeo..','..oeeeooeeeo..','...ooo..ooo...',T,T,T,T,T,T],
-  hollow: [T,T,T,'..oooo..oooo..','..oeeo..oeeo..','..oeeo..oeeo..','..oooo..oooo..',T,T,T,T,T],
-  slit:   [T,T,T,T,'..oooo..oooo..','..oeeeooeeeo..','...oo....oo...',T,T,T,T,T],
-  cross:  [T,T,T,'..oe.o..o.eo..','...oeo..oeo...','...oeo..oeo...','..oe.o..o.eo..',T,T,T,T,T],
-  glow:   [T,T,T,'..oeeeooeeeo..','..oeeeooeeeo..','..oeeeooeeeo..',T,T,T,T,T,T],
-  one:    [T,T,T,'.....oooo.....','....oeeeeo....','....oeeeeo....','.....oooo.....',T,T,T,T,T]
+  normal: [T,T,T,T,T,T,'...oooo..oooo...','..owwwo..owwwo..','..oweeo..oweeo..','..oweeo..oweeo..','...oooo..oooo...',T,T,T],
+  sad:    [T,T,T,T,T,T,T,'...ooo....ooo...','..owweo..owweo..','..oweeo..oweeo..','...ooo....ooo...',T,T,T],
+  wide:   [T,T,T,T,T,'..oooo...oooo...','.owwwwo.owwwwo..','.oweeeo.oweeeo..','.oweeeo.oweeeo..','..oooo...oooo...',T,T,T,T],
+  hollow: [T,T,T,T,T,T,'...oooo..oooo...','..oeeeo..oeeeo..','..oeeeo..oeeeo..','..oeeeo..oeeeo..','...oooo..oooo...',T,T,T],
+  slit:   [T,T,T,T,T,T,T,'..oooo....oooo..','..oeeo....oeeo..','...oo......oo...',T,T,T,T],
+  cross:  [T,T,T,T,T,T,T,'..oe.eo..oe.eo..','...oeo....oeo...','..oe.eo..oe.eo..',T,T,T,T],
+  glow:   [T,T,T,T,T,T,'...oooo..oooo...','..oeeeo..oeeeo..','..oeeeo..oeeeo..','..oeeeo..oeeeo..','...oooo..oooo...',T,T,T],
+  one:    [T,T,T,T,T,'.....oooooo.....','....owwwwwwo....','....oweeeewo....','....oweeeewo....','.....oooooo.....',T,T,T,T]
 };
 
 const ACC = {
-  none: [T,T,T,T,T,T,T,T,T,T,T,T],
+  none: [T,T,T,T,T,T,T,T,T,T,T,T,T,T],
   horns: [
-    'oo..........oo','oaao......oaao','.oaao....oaao.','..oao....oao..',
-    T,T,T,T,T,T,T,T
+    'oo............oo','oaao........oaao','.oaao......oaao.','..oao......oao..',
+    T,T,T,T,T,T,T,T,T,T
   ],
   halo: [
-    '...oaaaaaao...','...o......o...','....oaaaao....',T,T,T,T,T,T,T,T,T
+    '....oaaaaaaao...','....o.......o...','.....oaaaaao....',T,T,T,T,T,T,T,T,T,T,T
   ],
-  mask: [T,T,'.oaaaaaaaaaao.','oaaaaaaaaaaaao','oaao.oo.o.oaao'.slice(0,14),'oaaaaaaaaaaaao','.oaaaaaaaaaao.','..oaaaaaaaao..',T,T,T,T],
-  bandage: [T,T,T,'oaaaaaaaaaaaao','oaaaaaaaaaaaao',T,T,T,'.oaaaaaaaaaao.',T,T,T],
+  mask: [T,T,T,T,T,'.oaaaaaaaaaaaao.','oaaaaaaaaaaaaaao','oaao.oo..oo.oaao',
+    'oaaaaaaaaaaaaaao','.oaaaaaaaaaaaao.','..oaaaaaaaaaao..',T,T,T],
+  bandage: [T,T,T,T,T,T,'oaaaaaaaaaaaaaao','oaaaaaaaaaaaaaao',T,T,'.oaaaaaaaaaaaao.',T,T,T],
   flame: [
-    '......aa......','.....aaaa.....','....aaaaaa....','.....aaaa.....',
-    T,T,T,T,T,T,T,T
+    '.......aa.......','......aaaa......','.....aaaaaa.....','......aaaa......',
+    '.......aa.......',T,T,T,T,T,T,T,T,T
   ],
   antenna: [
-    'a..........a..','.a........a...','..a......a....','...aa..aa.....',
-    T,T,T,T,T,T,T,T
+    '.a............a.','..a..........a..','...a........a...','....aa....aa....',
+    T,T,T,T,T,T,T,T,T,T
   ],
   crown: [
-    '.o..oooo..o...','.oao.oao.oao..','.oaaaaaaaao...','.oaaaaaaaao...',
-    T,T,T,T,T,T,T,T
+    '..o..o.oo.o..o..','..oao.oaao.oao..','..oaaaaaaaaaao..','..oaaaaaaaaaao..',
+    T,T,T,T,T,T,T,T,T,T
   ],
   wings: [
-    T,T,T,'aa..........aa','aaa........aaa','aaaa......aaaa','.aaa........aa'.slice(0,14),'..aa..........',
-    T,T,T,T
+    T,T,T,T,'aa............aa','aaa..........aaa','aaaa........aaaa','.aaa........aaa.',
+    '..aa........aa..',T,T,T,T,T
   ],
-  tears: [T,T,T,T,T,T,T,'...oao...oao..','...oao...oao..','....oa....oa..',T,T]
+  tears: [T,T,T,T,T,T,T,T,T,T,'...oao....oao...','...oao....oao...','....a......a....',T]
 };
 
 /* ------------------------------------------------------------------ */
-/* bodies (14 x 8) — three facings, two walk frames each               */
+/* bodies (16 x 10) — three facings, two walk frames each              */
 /* ------------------------------------------------------------------ */
+/* b = shirt, k = shirt shade, s = bare skin (arms and legs). */
 const BODY = {
   down: [[
-    '..oooooooo....','.obbbbbbbbo...','osbbbbbbbbso..','osbbbbbbbbso..',
-    'o.obbbbbbo..o.','...obbbbo.....','..osso.osso...','..oooo..oooo..'
+    '..oooooooooo....','.obbbbbbbbbbo...','osbbbbbbbbbbso..','osbbbbbbbbbbso..',
+    'oskbbbbbbbbkso..','.okbbbbbbbbko...','..okbbbbbbko....','...osso.osso....',
+    '...osso.osso....','...oooo.oooo....'
   ],[
-    '..oooooooo....','.obbbbbbbbo...','osbbbbbbbbso..','osbbbbbbbbso..',
-    'o.obbbbbbo..o.','...obbbbo.....','.osso....osso.','.oooo......ooo'
+    '..oooooooooo....','.obbbbbbbbbbo...','osbbbbbbbbbbso..','osbbbbbbbbbbso..',
+    'oskbbbbbbbbkso..','.okbbbbbbbbko...','..okbbbbbbko....','..osso....osso..',
+    '..osso....osso..','..oooo....oooo..'
   ]],
   side: [[
-    '...oooooo.....','..obbbbbbo....','.obbbbbbbbo...','.obbbbbbbbo...',
-    'ossobbbbbo....','...obbbbo.....','...osso.ss....','...oooo.oo....'
+    '...oooooooo.....','..obbbbbbbbo....','.obbbbbbbbbo....','osbbbbbbbbbo....',
+    'osbbbbbbbbbo....','.okbbbbbbbko....','..okbbbbbko.....','..osso..osso....',
+    '..osso..osso....','..oooo..oooo....'
   ],[
-    '...oooooo.....','..obbbbbbo....','.obbbbbbbbo...','.obbbbbbbbo...',
-    'ossobbbbbo....','...obbbbo.....','..oss....so...','..oooo...oo...'
+    '...oooooooo.....','..obbbbbbbbo....','.obbbbbbbbbo....','osbbbbbbbbbo....',
+    'osbbbbbbbbbo....','.okbbbbbbbko....','..okbbbbbko.....','...osso.osso....',
+    '...osso.osso....','...oooo.oooo....'
   ]],
   up: [[
-    '..oooooooo....','.obbbbbbbbo...','osbbbbbbbbso..','osbbbbbbbbso..',
-    'o.obbbbbbo..o.','...obbbbo.....','..obbo.obbo...','..oooo..oooo..'
+    '..oooooooooo....','.obbbbbbbbbbo...','osbbbbbbbbbbso..','osbbbbbbbbbbso..',
+    'oskbbbbbbbbkso..','.okbbbbbbbbko...','..okbbbbbbko....','...osso.osso....',
+    '...osso.osso....','...oooo.oooo....'
   ],[
-    '..oooooooo....','.obbbbbbbbo...','osbbbbbbbbso..','osbbbbbbbbso..',
-    'o.obbbbbbo..o.','...obbbbo.....','.obbo....obbo.','.oooo......ooo'
+    '..oooooooooo....','.obbbbbbbbbbo...','osbbbbbbbbbbso..','osbbbbbbbbbbso..',
+    'oskbbbbbbbbkso..','.okbbbbbbbbko...','..okbbbbbbko....','..osso....osso..',
+    '..osso....osso..','..oooo....oooo..'
   ]]
 };
 
 /**
  * Build every frame a character needs.
- * Returns { down:[f0,f1], side:[f0,f1], up:[f0,f1] } of 14x18 sprites.
+ * Returns { down:[f0,f1], side:[f0,f1], up:[f0,f1] } of 16x22 sprites.
  */
 export function buildCharacter(def){
   const key = 'ch:' + def.id;
-  const skinPal = { o:O, s:def.skin, d:def.skinShade || shade(def.skin) };
+  const skin = def.skin;
+  const skinPal = {
+    o:O, s:skin, d:def.skinShade || shade(skin, 0.74), l:def.skinLit || lift(skin)
+  };
   const hairPal = { o:O, h:def.hair || '#3a2c22', g:def.hairShade || shade(def.hair || '#3a2c22') };
-  const eyePal  = { o:O, e:def.eye || '#2a2a3a' };
+  const eyePal  = { o:O, e:def.eye || '#2a2a3a', w:def.eyeWhite || '#f4f2ea' };
   const accPal  = { o:O, a:def.accent || '#ffd166' };
-  const bodyPal = { o:O, b:def.shirt || '#c9c2b0', s:def.skin };
+  const shirt   = def.shirt || '#c9c2b0';
+  const bodyPal = { o:O, b:shirt, k:shade(shirt, 0.72), s:skin };
 
-  const head = compose(key + ':head', 14, 12, [
-    { s: bake(SKULL, skinPal), dx:0, dy:0 },
-    { s: bake(HAIR[def.hairStyle] || HAIR.none, hairPal), dx:0, dy:0 },
+  const skullS = bake(SKULL, skinPal);
+  const hairS  = bake(HAIR[def.hairStyle] || HAIR.none, hairPal);
+  const accS   = bake(ACC[def.acc] || ACC.none, accPal);
+
+  const head = compose(key + ':head', 16, 14, [
+    { s: skullS, dx:0, dy:0 },
+    { s: hairS, dx:0, dy:0 },
     { s: bake(EYES[def.eyes] || EYES.normal, eyePal), dx:0, dy:0 },
-    { s: bake(ACC[def.acc] || ACC.none, accPal), dx:0, dy:0 }
+    { s: accS, dx:0, dy:0 }
+  ]);
+  // walking away should show the back of a head, not a face pasted on a back
+  const backHead = compose(key + ':back', 16, 14, [
+    { s: skullS, dx:0, dy:0 },
+    { s: hairS, dx:0, dy:0 },
+    { s: accS, dx:0, dy:0 }
   ]);
 
   const out = {};
   for (const facing of ['down', 'side', 'up']){
+    const h = facing === 'up' ? backHead : head;
     out[facing] = BODY[facing].map((rows, i) => compose(
-      `${key}:${facing}:${i}`, 14, 18,
-      [ { s: bake(rows, bodyPal), dx:0, dy:10 }, { s: head, dx:0, dy:0 } ]
+      `${key}:${facing}:${i}`, 16, 22,
+      [ { s: bake(rows, bodyPal), dx:0, dy:12 }, { s: h, dx:0, dy:0 } ]
     ));
   }
   out.head = head;
   return out;
+}
+
+/** Lighter sibling of a hex colour, for the lit side of a form. */
+function lift(hex, k = 0.16){
+  const n = parseInt(hex.slice(1), 16);
+  const ch = i => { const v = (n >> i) & 255; return Math.round(v + (255 - v) * k); };
+  return '#' + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1);
 }
 
 /** Darker sibling of a hex colour — saves declaring a shade for every palette. */

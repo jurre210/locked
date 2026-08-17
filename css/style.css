@@ -502,7 +502,7 @@ body.playing #bg{ opacity:.34; }
   backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
   border-radius:8px;
 }
-.bm-root.menu .bm-canvas{ opacity:.35; }
+.bm-root.menu .bm-canvas{ opacity:.55; }
 
 .bm-screen{
   width:100%; max-width:560px;

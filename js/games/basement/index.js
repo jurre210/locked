@@ -7,7 +7,7 @@
 import { el } from '../../core/ui.js';
 import * as S from '../../core/store.js';
 import { unlock } from '../../core/audio.js';
-import { VW, VH } from './art.js';
+import { VW, VH, ROOM_X, ROOM_Y, ROOM_W, ROOM_H } from './art.js';
 import { crisp } from './sprite.js';
 import { Game } from './game.js';
 import { Input } from './input.js';
@@ -25,6 +25,14 @@ import {
 
 const SAVE = 'basement.prefs.v1';
 const REC_KEY = 'basement';
+
+/** Where the attract-mode bot walks to when it wants to leave by a given door. */
+const DOOR_TARGET = {
+  n: { x: ROOM_X + ROOM_W / 2, y: ROOM_Y + 6 },
+  s: { x: ROOM_X + ROOM_W / 2, y: ROOM_Y + ROOM_H - 6 },
+  w: { x: ROOM_X + 6, y: ROOM_Y + ROOM_H / 2 },
+  e: { x: ROOM_X + ROOM_W - 6, y: ROOM_Y + ROOM_H / 2 }
+};
 
 function prefs(){
   try { return JSON.parse(localStorage.getItem(SAVE)) || {}; } catch (e){ return {}; }
@@ -71,6 +79,60 @@ const BASEMENT = {
     let screen = 'title';
     let running = false;
     let netStatus = '';
+    let attract = null;
+
+    /* ---- attract mode ------------------------------------------------
+       The menus sit over the canvas, so leaving it as a dark rectangle wastes
+       the only thing worth looking at. Instead a real run plays itself behind
+       them, driven by a small bot on the same input contract as a person. */
+    function attractBot(g){
+      const p = g.players[0];
+      const inp = { mx:0, my:0, ax:0, ay:0, active:false, bomb:false, card:false, map:false, drop:false };
+      const e = g.nearestEnemy(p.x, p.y);
+      if (e){
+        const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy) || 1;
+        inp.ax = dx / d; inp.ay = dy / d;
+        // hold a middle distance and circle, so it looks played rather than driven
+        const push = d < 74 ? -1 : d > 132 ? 1 : 0;
+        inp.mx = (dx / d) * push + (-dy / d) * 0.55;
+        inp.my = (dy / d) * push + (dx / d) * 0.55;
+      } else {
+        // room is clear — wander to a door and take it
+        if (!g.botDoor || g.botDoorRoom !== g.room.key){
+          const dirs = Object.entries(g.room.doors).filter(([, dr]) => dr.open && !dr.locked && (!dr.hidden || dr.revealed));
+          g.botDoor = dirs.length ? dirs[(Math.random() * dirs.length) | 0][0] : null;
+          g.botDoorRoom = g.room.key;
+        }
+        const pos = g.botDoor && DOOR_TARGET[g.botDoor];
+        if (pos){
+          const dx = pos.x - p.x, dy = pos.y - p.y, d = Math.hypot(dx, dy) || 1;
+          inp.mx = dx / d; inp.my = dy / d;
+        }
+      }
+      const m = Math.hypot(inp.mx, inp.my);
+      if (m > 1){ inp.mx /= m; inp.my /= m; }
+      return inp;
+    }
+
+    function startAttract(){
+      const pick = CHARACTERS[(Math.random() * CHARACTERS.length) | 0];
+      attract = new Game({
+        canvas,
+        input: { read: () => attractBot(attract), poll(){}, endFrame(){} },
+        mode: makeMode('normal'),
+        seed: (Math.random() * 0x7fffffff) >>> 0,
+        chars: [pick.id],
+        onEnd(){ attract = null; }        // a fresh demo starts on the next tick
+      });
+      // the demo should show off the game, not a naked starting character
+      const p = attract.players[0];
+      for (let i = 0; i < 3; i++) p.addItem(attract.rollItem('treasure'), { silent:true });
+      p.recompute();
+      attract.toast = null;
+      const first = attract.floor.list.find(r => r.type === 'normal');
+      if (first) attract.enterRoom(first, null);
+      attract.banner = null;
+    }
 
     /* ---- screens ---- */
     const show = (node) => {
@@ -196,6 +258,7 @@ const BASEMENT = {
     /* ---- the run ---- */
     function startRun(opts = {}){
       unlock();
+      attract = null;
       const mode = makeMode(modeId, challengeId);
       if (mode.challenge?.char) charId = mode.challenge.char;
       const count = opts.online === 'host' ? 2 : locals;
@@ -242,10 +305,11 @@ const BASEMENT = {
       if (m.forceCurse) g.floor.curse = { id:m.forceCurse, name:'Curse of the Dark', desc:'You can only see what is near you.' };
     }
 
+    /** Ends the run but leaves the loop turning, so attract mode keeps playing. */
     function stopRun(){
-      running = false;
       game = null;
-      if (remote){ remote = null; }
+      remote = null;
+      start();
     }
 
     function finish(res){
@@ -289,10 +353,24 @@ const BASEMENT = {
         return true;
       }
 
+      // menus: keep a demo run alive behind the overlay
+      if (screen !== 'playing' && screen !== 'remote'){
+        if (!attract) startAttract();
+        if (attract){
+          let a = dt; let n = 0;
+          while (a >= STEP && n < 3){ attract.update(STEP, n === 0); a -= STEP; n++; }
+          attract.players[0].invuln = 3;      // the demo must never die mid-menu
+          if (attract.depth > 2 || attract.stats.roomsCleared > 14) attract = null;
+          else attract.render();
+        }
+        input.endFrame();
+        return true;
+      }
+
       if (game && screen === 'playing'){
         acc += dt;
         let steps = 0;
-        while (acc >= STEP && steps < 5){ game.update(STEP); acc -= STEP; steps++; }
+        while (acc >= STEP && steps < 5){ game.update(STEP, steps === 0); acc -= STEP; steps++; }
         if (steps >= 5) acc = 0;
         game.render();
 
@@ -345,8 +423,11 @@ const BASEMENT = {
       get game(){ return game; },
       get screen(){ return screen; },
       get remote(){ return remote; },
+      get attract(){ return attract; },
       start: (opts) => { charId = opts?.char || charId; modeId = opts?.mode || modeId; locals = opts?.locals || locals; startRun(); },
       step: (n = 60) => { for (let i = 0; i < n; i++) game.update(1 / 60); game.render(); },
+      /** Run the real loop body by hand — rAF is throttled when the pane is hidden. */
+      tick: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) loop(performance.now() + i * dt * 1000); },
       goTitle
     };
     life.offs.push(() => { running = false; try { net?.close(); } catch (e){} delete window.__basement; });

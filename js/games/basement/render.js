@@ -7,7 +7,7 @@
  */
 import {
   CELL, GRID_W, GRID_H, WALL, HUD_H, ROOM_X, ROOM_Y, ROOM_W, ROOM_H, VW, VH,
-  THEMES, floorTile, wallTile, obstacleSprite, DOOR_STYLE, doorEmblem,
+  THEMES, floorTile, wallTile, FLOOR_VARIANTS, obstacleSprite, DOOR_STYLE, doorEmblem,
   PICKUP_ART, pillSprite, itemIcon, pedestalSprite, shopkeepSprite, slotSprite,
   beggarSprite, altarSprite, trapdoorSprite, drawExplosion, tearSprite, sparkSprite
 } from './art.js';
@@ -50,11 +50,13 @@ function drawRoom(ctx, g){
   const t = THEMES[theme];
   const room = g.room;
 
-  // floor
+  // floor — a scrambling hash rather than a linear one, or the variants line
+  // up into visible diagonal stripes across the room
   for (let y = 0; y < GRID_H; y++){
     for (let x = 0; x < GRID_W; x++){
-      const v = (x * 7 + y * 13 + (room.seed & 3)) % 4;
-      const s = floorTile(theme, v);
+      let h = (x * 374761393 + y * 668265263 + room.seed) | 0;
+      h = (h ^ (h >> 13)) * 1274126177;
+      const s = floorTile(theme, ((h ^ (h >> 16)) >>> 0) % FLOOR_VARIANTS);
       ctx.drawImage(s.c, ROOM_X + x * CELL, ROOM_Y + y * CELL);
     }
   }
@@ -76,6 +78,31 @@ function drawRoom(ctx, g){
     ctx.drawImage(wallTile(theme, 'left', y & 1).c, wx0, ROOM_Y + y * CELL);
     ctx.drawImage(wallTile(theme, 'right', y & 1).c, ROOM_X + ROOM_W, ROOM_Y + y * CELL);
   }
+
+  // shadow cast by the walls onto the floor, plus a soft corner vignette.
+  // Flat lighting is most of what makes a tiled room read as "boring".
+  ctx.save();
+  const sh = ctx.createLinearGradient(0, ROOM_Y, 0, ROOM_Y + 26);
+  sh.addColorStop(0, 'rgba(0,0,0,.34)');
+  sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(ROOM_X, ROOM_Y, ROOM_W, 26);
+  const sl = ctx.createLinearGradient(ROOM_X, 0, ROOM_X + 20, 0);
+  sl.addColorStop(0, 'rgba(0,0,0,.26)');
+  sl.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sl;
+  ctx.fillRect(ROOM_X, ROOM_Y, 20, ROOM_H);
+  const sr = ctx.createLinearGradient(ROOM_X + ROOM_W, 0, ROOM_X + ROOM_W - 20, 0);
+  sr.addColorStop(0, 'rgba(0,0,0,.22)');
+  sr.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sr;
+  ctx.fillRect(ROOM_X + ROOM_W - 20, ROOM_Y, 20, ROOM_H);
+  const sb = ctx.createLinearGradient(0, ROOM_Y + ROOM_H, 0, ROOM_Y + ROOM_H - 18);
+  sb.addColorStop(0, 'rgba(0,0,0,.24)');
+  sb.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sb;
+  ctx.fillRect(ROOM_X, ROOM_Y + ROOM_H - 18, ROOM_W, 18);
+  ctx.restore();
 
   drawDoors(ctx, g);
   drawObstacles(ctx, g);
@@ -334,7 +361,8 @@ function drawPlayer(ctx, g, p){
     ctx.restore();
   }
 
-  draw(ctx, art, p.x, p.y - 4 + lift, {
+  // 22-row sprite drawn at 2x: -8 puts the feet on the shadow rather than under it
+  draw(ctx, art, p.x, p.y - 8 + lift, {
     scale:2, flip: p.flip, alpha: blink ? 0.45 : 1,
     tint: p.hitFlash > 0 ? '#ff5c5c' : null, tintAmount: 0.6
   });

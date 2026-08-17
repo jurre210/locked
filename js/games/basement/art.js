@@ -53,34 +53,90 @@ const surf = (w, h) => {
 
 const tileCache = new Map();
 
-/** 32x32 floor slab, `v` picks one of four variants. */
+export const FLOOR_VARIANTS = 8;
+
+/**
+ * 32x32 floor slab, `v` picks one of FLOOR_VARIANTS.
+ *
+ * Built as four flagstones rather than flat noise: each stone gets its own
+ * tone, a bevelled lit top edge and a shadowed bottom, then cracks and stains
+ * on top. Eight variants is enough that a 13-wide room never shows an obvious
+ * repeat.
+ */
 export function floorTile(theme, v = 0){
   const key = `f:${theme}:${v}`;
   if (tileCache.has(key)) return tileCache.get(key);
   const t = THEMES[theme] || THEMES.cellar;
   const rng = noise(hash(key));
   const [c, g] = surf(CELL, CELL);
-  g.fillStyle = t.floor[1];
-  g.fillRect(0, 0, CELL, CELL);
-  // speckle
-  for (let i = 0; i < 46; i++){
-    g.fillStyle = rng() > 0.5 ? t.floor[0] : t.floor[2];
-    g.globalAlpha = 0.18 + rng() * 0.3;
-    const s = rng() > 0.82 ? 2 : 1;
-    g.fillRect((rng() * CELL) | 0, (rng() * CELL) | 0, s, s);
-  }
-  // grout — a hairline on two edges reads as a tiled floor without a hard grid
-  g.globalAlpha = 0.22;
+
+  // grout sits underneath and shows through the gaps between stones
   g.fillStyle = t.floor[0];
-  g.fillRect(0, 0, CELL, 1);
-  g.fillRect(0, 0, 1, CELL);
-  g.globalAlpha = 0.1;
-  g.fillStyle = t.floor[2];
-  g.fillRect(0, CELL - 1, CELL, 1);
+  g.fillRect(0, 0, CELL, CELL);
+
+  const H = CELL / 2;
+  for (let qy = 0; qy < 2; qy++){
+    for (let qx = 0; qx < 2; qx++){
+      const x = qx * H, y = qy * H;
+      const tone = 0.82 + rng() * 0.36;
+      g.fillStyle = mix(t.floor[1], t.floor[2], (tone - 0.82) / 0.36 * 0.5);
+      g.fillRect(x + 1, y + 1, H - 2, H - 2);
+      // bevel: light along the top, shadow along the bottom
+      g.globalAlpha = 0.22;
+      g.fillStyle = t.floor[2];
+      g.fillRect(x + 1, y + 1, H - 2, 1);
+      g.fillRect(x + 1, y + 1, 1, H - 2);
+      g.globalAlpha = 0.3;
+      g.fillStyle = t.floor[0];
+      g.fillRect(x + 1, y + H - 2, H - 2, 1);
+      g.fillRect(x + H - 2, y + 1, 1, H - 2);
+      g.globalAlpha = 1;
+
+      // a crack across some stones
+      if (rng() > 0.62){
+        g.globalAlpha = 0.28;
+        g.fillStyle = t.floor[0];
+        let cx = x + 3 + rng() * (H - 8), cy = y + 3;
+        const steps = 4 + (rng() * 5) | 0;
+        for (let i = 0; i < steps; i++){
+          g.fillRect(cx | 0, cy | 0, 1, 1);
+          cx += rng() < 0.5 ? -1 : 1;
+          cy += 1;
+          if (cy > y + H - 3) break;
+        }
+        g.globalAlpha = 1;
+      }
+      // an occasional stain, so the eye has something to land on
+      if (rng() > 0.8){
+        g.globalAlpha = 0.1 + rng() * 0.08;
+        g.fillStyle = t.accent;
+        const r = 2 + rng() * 3;
+        g.beginPath();
+        g.arc(x + H / 2 + (rng() - .5) * 6, y + H / 2 + (rng() - .5) * 6, r, 0, Math.PI * 2);
+        g.fill();
+        g.globalAlpha = 1;
+      }
+    }
+  }
+
+  // fine grit over the whole slab to break up the flat fills
+  for (let i = 0; i < 34; i++){
+    g.fillStyle = rng() > 0.5 ? t.floor[0] : t.floor[2];
+    g.globalAlpha = 0.12 + rng() * 0.2;
+    g.fillRect((rng() * CELL) | 0, (rng() * CELL) | 0, 1, 1);
+  }
   g.globalAlpha = 1;
+
   const s = { c, w: CELL, h: CELL };
   tileCache.set(key, s);
   return s;
+}
+
+/** Blend two hex colours, `k` 0..1 toward b. */
+function mix(a, b, k){
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ch = i => Math.round((((pa >> i) & 255)) + ((((pb >> i) & 255)) - (((pa >> i) & 255))) * k);
+  return '#' + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1);
 }
 
 /**
@@ -93,20 +149,44 @@ export function wallTile(theme, side = 'top', v = 0){
   const t = THEMES[theme] || THEMES.cellar;
   const rng = noise(hash(key));
   const [c, g] = surf(CELL, CELL);
-  g.fillStyle = t.wall[1];
+  // mortar behind, bricks laid on top so the gaps are real rather than drawn
+  g.fillStyle = t.wall[0];
   g.fillRect(0, 0, CELL, CELL);
-  // brick courses
-  g.globalAlpha = 0.5;
-  for (let y = 0; y < CELL; y += 8){
-    g.fillStyle = t.wall[0];
-    g.fillRect(0, y, CELL, 1);
-    const off = ((y / 8) % 2) * 8;
-    for (let x = off; x < CELL; x += 16) g.fillRect(x, y, 1, 8);
+
+  const BH = 8, BW = 16;
+  for (let row = 0, y = 0; y < CELL; y += BH, row++){
+    const off = (row % 2) * (BW / 2);
+    for (let x = -BW; x < CELL + BW; x += BW){
+      const bx = x + off;
+      const tone = rng();
+      g.fillStyle = mix(t.wall[1], tone > 0.6 ? t.wall[2] : t.wall[0], Math.abs(tone - 0.5) * 0.5);
+      g.fillRect(bx + 1, y + 1, BW - 2, BH - 2);
+      // lit top edge, shadowed underside — this is what gives the wall relief
+      g.globalAlpha = 0.26;
+      g.fillStyle = t.wall[2];
+      g.fillRect(bx + 1, y + 1, BW - 2, 1);
+      g.globalAlpha = 0.34;
+      g.fillStyle = t.wall[0];
+      g.fillRect(bx + 1, y + BH - 2, BW - 2, 1);
+      g.globalAlpha = 1;
+      // chipped corner on the odd brick
+      if (rng() > 0.86){
+        g.fillStyle = t.wall[0];
+        g.globalAlpha = 0.5;
+        g.fillRect(bx + 1 + ((rng() * (BW - 4)) | 0), y + 1 + ((rng() * (BH - 3)) | 0), 2, 2);
+        g.globalAlpha = 1;
+      }
+    }
   }
-  g.globalAlpha = 1;
-  for (let i = 0; i < 30; i++){
+  // theme accent creeping through the mortar (moss, rust, damp)
+  for (let i = 0; i < 10; i++){
+    g.fillStyle = t.accent;
+    g.globalAlpha = 0.05 + rng() * 0.07;
+    g.fillRect((rng() * CELL) | 0, (rng() * CELL) | 0, 1 + ((rng() * 2) | 0), 1);
+  }
+  for (let i = 0; i < 22; i++){
     g.fillStyle = rng() > 0.5 ? t.wall[0] : t.wall[2];
-    g.globalAlpha = 0.14 + rng() * 0.24;
+    g.globalAlpha = 0.12 + rng() * 0.2;
     g.fillRect((rng() * CELL) | 0, (rng() * CELL) | 0, 1, 1);
   }
   g.globalAlpha = 1;
