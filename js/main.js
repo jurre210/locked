@@ -11,12 +11,13 @@ import MEMORY from './games/memory.js';
 import SOUND from './games/sound.js';
 import MIND from './games/mind.js';
 import { makeMeta } from './games/meta.js';
+import SECRET from './games/basement/index.js';
 
 const BASE = [...PERCEPTION, ...REFLEX, ...MEMORY, ...SOUND, ...MIND];
 const META = makeMeta(BASE);
-const GAMES = [...BASE, ...META];
+const GAMES = [...BASE, ...META, ...SECRET];
 const BY_KEY = Object.fromEntries(GAMES.map(g => [g.key, g]));
-const CATS = ['all', 'perception', 'reflex', 'memory', 'sound', 'mind'];
+const CATS = ['all', 'perception', 'reflex', 'memory', 'sound', 'mind', 'secret'];
 
 BG.mount();
 
@@ -178,7 +179,7 @@ function home(){
   },
     el('div', { class:'tile-top' },
       el('div', { class:'tile-name', text:g.name }),
-      el('div', { class:'tile-cat', text: g.special ? 'mode' : g.cat })),
+      el('div', { class:'tile-cat', text: g.tileTag || (g.special ? 'mode' : g.cat) })),
     el('div', { class:'tile-blurb' }, el('span', { text:g.blurb })),
     el('div', { class:'tile-best', html: bestLine(g) })
   )));
