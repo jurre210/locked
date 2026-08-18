@@ -113,30 +113,30 @@ const ACC = {
 /* b = shirt, k = shirt shade, s = bare skin (arms and legs). */
 const BODY = {
   down: [[
-    '..oooooooooo....','.obbbbbbbbbbo...','osbbbbbbbbbbso..','osbbbbbbbbbbso..',
-    'oskbbbbbbbbkso..','.okbbbbbbbbko...','..okbbbbbbko....','...osso.osso....',
-    '...osso.osso....','...oooo.oooo....'
+    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+    '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','...osso..osso...',
+    '...osso..osso...','...oooo..oooo...'
   ],[
-    '..oooooooooo....','.obbbbbbbbbbo...','osbbbbbbbbbbso..','osbbbbbbbbbbso..',
-    'oskbbbbbbbbkso..','.okbbbbbbbbko...','..okbbbbbbko....','..osso....osso..',
+    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+    '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','..osso....osso..',
     '..osso....osso..','..oooo....oooo..'
   ]],
   side: [[
-    '...oooooooo.....','..obbbbbbbbo....','.obbbbbbbbbo....','osbbbbbbbbbo....',
-    'osbbbbbbbbbo....','.okbbbbbbbko....','..okbbbbbko.....','..osso..osso....',
-    '..osso..osso....','..oooo..oooo....'
+    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbo..','.osbbbbbbbbbbo..',
+    '..okbbbbbbbbko..','..okbbbbbbbbko..','...okbbbbbbko...','....osssso......',
+    '...osso.sso.....','...oooo.ooo.....'
   ],[
-    '...oooooooo.....','..obbbbbbbbo....','.obbbbbbbbbo....','osbbbbbbbbbo....',
-    'osbbbbbbbbbo....','.okbbbbbbbko....','..okbbbbbko.....','...osso.osso....',
-    '...osso.osso....','...oooo.oooo....'
+    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbo..','.osbbbbbbbbbbo..',
+    '..okbbbbbbbbko..','..okbbbbbbbbko..','...okbbbbbbko...','....osssso......',
+    '..oss..osso.....','..oooo..ooo.....'
   ]],
   up: [[
-    '..oooooooooo....','.obbbbbbbbbbo...','osbbbbbbbbbbso..','osbbbbbbbbbbso..',
-    'oskbbbbbbbbkso..','.okbbbbbbbbko...','..okbbbbbbko....','...osso.osso....',
-    '...osso.osso....','...oooo.oooo....'
+    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+    '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','...osso..osso...',
+    '...osso..osso...','...oooo..oooo...'
   ],[
-    '..oooooooooo....','.obbbbbbbbbbo...','osbbbbbbbbbbso..','osbbbbbbbbbbso..',
-    'oskbbbbbbbbkso..','.okbbbbbbbbko...','..okbbbbbbko....','..osso....osso..',
+    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+    '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','..osso....osso..',
     '..osso....osso..','..oooo....oooo..'
   ]]
 };

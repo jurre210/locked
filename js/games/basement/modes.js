@@ -49,7 +49,47 @@ export function makeMode(id, challengeId){
   return mode;
 }
 
-/** Daily seed: same integer for everybody, for the whole day. */
-export const dailySeed = () => (dayKey() * 2654435761) >>> 0;
+/* ------------------------------------------------------------------ */
+/* seeds                                                               */
+/* ------------------------------------------------------------------ */
+/**
+ * A run is identified by an 8-character code rather than a raw integer, so it
+ * can be read off the screen and typed back in. I and O are left out because
+ * they are indistinguishable from 1 and 0 when someone copies one by hand.
+ */
+export const SEED_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
 
-export const modeSeed = (mode) => mode.seeded ? dailySeed() : (Math.random() * 0x7fffffff) >>> 0;
+export function randomSeedString(rand = Math.random){
+  let out = '';
+  for (let i = 0; i < 8; i++) out += SEED_ALPHABET[(rand() * SEED_ALPHABET.length) | 0];
+  return out;
+}
+
+/** Fold anything the user typed into a legal 8-character code. */
+export function normaliseSeed(str){
+  const up = String(str || '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+  const kept = [...up].filter(ch => SEED_ALPHABET.includes(ch)).join('');
+  if (!kept) return null;
+  return kept.slice(0, 8).padEnd(8, SEED_ALPHABET[0]);
+}
+
+/** The code is the identity; the integer the generator wants is derived. */
+export function seedFromString(code){
+  let h = 2166136261;
+  for (let i = 0; i < code.length; i++){ h ^= code.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+/** Daily code: same eight characters for everybody, for the whole day. */
+export function dailySeedString(){
+  let n = (dayKey() * 2654435761) >>> 0;
+  let out = '';
+  for (let i = 0; i < 8; i++){ out += SEED_ALPHABET[n % SEED_ALPHABET.length]; n = Math.floor(n / 3) + 7919; }
+  return out;
+}
+
+/** @returns {{code:string, value:number}} */
+export function resolveSeed(mode, typed){
+  const code = mode.seeded ? dailySeedString() : (normaliseSeed(typed) || randomSeedString());
+  return { code, value: seedFromString(code) };
+}

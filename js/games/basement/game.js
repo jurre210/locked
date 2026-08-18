@@ -359,8 +359,8 @@ export class Game {
       this.room.reward = null;
     } else if (this.room.type === 'miniboss'){
       this.spawnPickup(this.rng() < 0.5 ? 'heartSoul' : 'trinket', cx, cy);
-    } else if (this.rng() < 0.28){
-      this.spawnPickup(this.randomPickup(), cx, cy);
+    } else {
+      this.clearDrop(cx, cy);
     }
   }
 
@@ -643,7 +643,7 @@ export class Game {
     for (const p of this.players){
       if (p.dead) continue;
       for (const [dir, door] of Object.entries(this.room.doors)){
-        if (!door.open || door.locked) continue;
+        if (!door.open) continue;
         if (door.hidden && !door.revealed) continue;
         const pos = DOOR_POS[dir];
         // Door centres sit inside the wall, but players are clamped to the room
@@ -655,6 +655,24 @@ export class Game {
         if (along > WALL + 6 || across > 24) continue;
         const target = this.floor.rooms.get(door.to);
         if (!target) continue;
+
+        // Locked doors were skipped outright, so keys had nothing to be spent
+        // on. Unlock on contact, then walk through on the same approach.
+        if (door.locked){
+          const free = p.flags.freeLocks && this.rng() < (typeof p.flags.freeLocks === 'number' ? p.flags.freeLocks : 1);
+          if (!free){
+            if (p.keys <= 0){
+              if (!door.warned){ door.warned = true; sfx.locked(); this.toastMsg('locked', 'you need a key'); }
+              continue;
+            }
+            p.keys--;
+          }
+          door.locked = false;
+          const back = target.doors[OPP[dir]];
+          if (back) back.locked = false;
+          sfx.unlock();
+          this.fx('spark', pos.x, pos.y, { colour:'#ffd166' });
+        }
         this.travel(target, dir);
         return;
       }
@@ -925,12 +943,24 @@ export class Game {
     }
   }
 
+  /** Per-enemy trickle. The bulk of your income is the room-clear drop below. */
   rollDrop(x, y){
     const r = this.rng();
-    if (r < 0.055) this.spawnPickup('heartHalf', x, y);
-    else if (r < 0.10) this.spawnPickup('coin', x, y);
-    else if (r < 0.125) this.spawnPickup('bomb', x, y);
-    else if (r < 0.145) this.spawnPickup('key', x, y);
+    if (r < 0.13) this.spawnPickup('coin', x, y);
+    else if (r < 0.18) this.spawnPickup('heartHalf', x, y);
+    else if (r < 0.215) this.spawnPickup('bomb', x, y);
+    else if (r < 0.25) this.spawnPickup('key', x, y);
+  }
+
+  /** Weighted room-clear reward. Coins lead, because they gate the shops. */
+  clearDrop(x, y){
+    const r = this.rng();
+    if (r < 0.30) this.spawnPickup(this.rng() < 0.25 ? 'nickel' : 'coin', x, y);
+    else if (r < 0.46) this.spawnPickup(this.rng() < 0.3 ? 'heartRed' : 'heartHalf', x, y);
+    else if (r < 0.58) this.spawnPickup('bomb', x, y);
+    else if (r < 0.70) this.spawnPickup('key', x, y);
+    else if (r < 0.76) this.spawnPickup('pill', x, y);
+    else if (r < 0.82) this.spawnPickup('card', x, y);
   }
 
   /* ---------------- bombs ---------------- */
@@ -1654,8 +1684,15 @@ export class Game {
     if (forceType) list = list.filter(i => i.type === forceType).concat(list.filter(i => i.type !== forceType).slice(0, 0));
     if (!list.length) list = poolOf(pool);
     if (!list.length) list = ITEMS;
-    // quality is weighted so a floor-one treasure room is usually not a q5
-    const weights = list.map(i => Math.max(0.2, 1.6 - Math.abs(i.q - (1 + this.depth * 0.5)) * 0.4));
+    // Quality still drifts up with depth, but far more gently than before —
+    // the old curve made floor one almost entirely flat stat-ups. Items that
+    // change how you play are weighted above ones that only move a number.
+    const target = 1.7 + this.depth * 0.4;
+    const weights = list.map(i => {
+      const q = Math.max(0.5, 1.3 - Math.abs(i.q - target) * 0.2);
+      const interesting = i.familiar || i.type === 'active' || (i.flags && Object.keys(i.flags).length) || i.on;
+      return q * (interesting ? 1.9 : 0.7);
+    });
     const total = weights.reduce((a, b) => a + b, 0);
     let r = this.rng() * total;
     for (let i = 0; i < list.length; i++){ r -= weights[i]; if (r <= 0) return list[i]; }
@@ -1696,7 +1733,7 @@ export class Game {
       depth: this.depth + 1,
       seconds: Math.round((performance.now() - this.stats.started) / 1000),
       items: this.players[0].items.map(i => i.name),
-      seed: this.seedValue
+      seed: this.seedCode || this.seedValue
     };
   }
 

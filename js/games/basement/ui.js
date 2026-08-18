@@ -25,6 +25,43 @@ export function spriteEl(s, scale = 3, cls = ''){
   return c;
 }
 
+/* A 5x7 pixel alphabet, just the letters the wordmark needs. Drawing the
+   title in the same pixels as the game beats setting it in a web font. */
+const GLYPHS = {
+  B:['####.','#...#','#...#','####.','#...#','#...#','####.'],
+  A:['.###.','#...#','#...#','#####','#...#','#...#','#...#'],
+  S:['.####','#....','#....','.###.','....#','....#','####.'],
+  E:['#####','#....','#....','####.','#....','#....','#####'],
+  M:['#...#','##.##','#.#.#','#...#','#...#','#...#','#...#'],
+  N:['#...#','##..#','#.#.#','#..##','#...#','#...#','#...#'],
+  T:['#####','..#..','..#..','..#..','..#..','..#..','..#..'],
+  ' ':['.....','.....','.....','.....','.....','.....','.....']
+};
+
+/** Render a word as chunky pixels, with a hard drop shadow. */
+export function wordmark(text, scale = 6, fill = '#f2ede0', shadow = '#8a2f2f'){
+  const letters = [...text.toUpperCase()].map(ch => GLYPHS[ch] || GLYPHS[' ']);
+  const w = letters.length * 6 - 1, h = 7;
+  const c = document.createElement('canvas');
+  c.width = (w + 1) * scale; c.height = (h + 1) * scale;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  const paint = (col, ox, oy) => {
+    g.fillStyle = col;
+    letters.forEach((rows, li) => {
+      rows.forEach((row, y) => {
+        [...row].forEach((ch, x) => {
+          if (ch === '#') g.fillRect((li * 6 + x + ox) * scale, (y + oy) * scale, scale, scale);
+        });
+      });
+    });
+  };
+  paint(shadow, 1, 1);
+  paint(fill, 0, 0);
+  c.className = 'bm-sprite bm-wordmark';
+  return c;
+}
+
 const btn = (text, on, cls = '') => el('button', {
   class:'bm-btn ' + cls, text,
   onclick(){ sfx.pickup(); on(); },
@@ -35,7 +72,7 @@ const btn = (text, on, cls = '') => el('button', {
 export function titleScreen({ onPlay, onCharacters, onModes, onCoop, onHelp, onBestiary, best }){
   return el('div', { class:'bm-screen' },
     el('div', { class:'bm-title' },
-      el('h2', { text:'basement' }),
+      wordmark('BASEMENT'),
       el('p', { text:`A run-based dungeon crawler. ${COUNTS.items} items, ${Object.keys(ENEMIES).length} enemies, ${BOSSES.length} bosses, ${FLOOR_ORDER.length} floors. Nothing is saved anywhere but this browser.` })
     ),
     el('div', { class:'bm-menu' },
@@ -106,7 +143,7 @@ export function characterScreen({ selected, onPick, onBack, onStart }){
 }
 
 /* ------------------------------------------------------------------ */
-export function modeScreen({ mode, challenge, onPick, onPickChallenge, onBack, onStart }){
+export function modeScreen({ mode, challenge, seed, onPick, onPickChallenge, onSeed, onBack, onStart }){
   const list = el('div', { class:'bm-list' });
   const chalWrap = el('div', { class:'bm-chal', hidden: mode !== 'challenge' });
 
@@ -131,9 +168,19 @@ export function modeScreen({ mode, challenge, onPick, onPickChallenge, onBack, o
     list.append(row);
   });
 
+  const seedInput = el('input', {
+    class:'bm-seed', type:'text', maxlength:'9', spellcheck:'false',
+    placeholder:'random', value: seed || '',
+    oninput(){ this.value = this.value.toUpperCase(); onSeed(this.value); }
+  });
+
   return el('div', { class:'bm-screen' },
     el('div', { class:'bm-head' }, el('h3', { text:'how do you want it' }), btn('back', onBack, 'small')),
     list, chalWrap,
+    el('div', { class:'bm-section' },
+      el('h4', { text:'seed' }),
+      el('p', { class:'bm-blurb', text:'Every run has an eight-character code that decides the whole floor plan, the items and the bosses. Leave it blank for a fresh one, or paste a code in to replay it exactly.' }),
+      seedInput),
     el('div', { class:'bm-menu row' }, btn('start', onStart, 'primary'))
   );
 }

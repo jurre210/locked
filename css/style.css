@@ -625,3 +625,17 @@ body.playing #bg{ opacity:.34; }
   .bm-canvas{ max-width:100%; }
   .bm-overlay{ padding:12px; align-items:flex-start; }
 }
+
+.bm-wordmark{
+  max-width:100%; height:auto; image-rendering:pixelated;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.6));
+}
+.bm-title{ display:flex; flex-direction:column; gap:14px; align-items:flex-start; }
+.bm-seed{
+  width:100%; max-width:220px; background:rgba(255,255,255,.05);
+  border:1px solid var(--line); border-radius:8px; padding:9px 12px;
+  font-family:var(--mono); font-size:15px; letter-spacing:.18em; color:var(--fg);
+  text-transform:uppercase;
+}
+.bm-seed:focus{ outline:none; border-color:var(--line-hot); background:rgba(255,255,255,.09); }
+.bm-seed::placeholder{ color:var(--dimmer); letter-spacing:.05em; text-transform:none; }

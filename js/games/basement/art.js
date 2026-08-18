@@ -25,15 +25,15 @@ export const VH = HUD_H + ROOM_H + WALL * 2; // 336
 /* ------------------------------------------------------------------ */
 /** One entry per floor depth. `floor`/`wall` are [dark, mid, light]. */
 export const THEMES = {
-  cellar:  { name:'the cellar',   floor:['#6b5641','#836b52','#9a8064'], wall:['#3b2e24','#54402f','#6b5340'], accent:'#c9a06a', liquid:null },
-  burrow:  { name:'the burrow',   floor:['#4a4038','#5e5248','#736558'], wall:['#2a231d','#3c322a','#4e4136'], accent:'#a08a6a', liquid:null },
-  caves:   { name:'the caves',    floor:['#4b5560','#5d6a77','#72808e'], wall:['#242b33','#333d47','#46525e'], accent:'#8fb0c9', liquid:null },
-  sump:    { name:'the sump',     floor:['#33544c','#3f6960','#4d7f74'], wall:['#1b2f2b','#284440','#365a53'], accent:'#63c7a6', liquid:'#2e6f63' },
-  depths:  { name:'the depths',   floor:['#3a3348','#4a4159','#5b506d'], wall:['#1e1a28','#2d2739','#3d354c'], accent:'#9b7ed6', liquid:null },
-  mire:    { name:'the mire',     floor:['#4d2f30','#61393a','#764648'], wall:['#2a1719','#3d2022','#502b2d'], accent:'#d06a6a', liquid:'#5c2426' },
-  hollow:  { name:'the hollow',   floor:['#6e3a45','#874854','#a15866'], wall:['#3e1e26','#552a34','#6b3742'], accent:'#ff8fa3', liquid:null },
-  vault:   { name:'the vault',    floor:['#5a4a2c','#6f5c37','#877043'], wall:['#2f2716','#453a21','#5b4c2c'], accent:'#ffd166', liquid:null },
-  core:    { name:'the core',     floor:['#2b2b33','#3a3a44','#4b4b57'], wall:['#141418','#202027','#2e2e37'], accent:'#e8e8f0', liquid:null }
+  cellar:  { name:'the cellar',   style:'plank', floor:['#5a3a26','#7a5236','#9a6b47'], wall:['#331f16','#4a2c1e','#633d2a'], accent:'#c98f4a', liquid:null },
+  burrow:  { name:'the burrow',   style:'plank', floor:['#4a2e22','#63402d','#7d543c'], wall:['#2a1812','#3d2419','#523225'], accent:'#a8703c', liquid:null },
+  caves:   { name:'the caves',    style:'stone', floor:['#4b5560','#5d6a77','#72808e'], wall:['#242b33','#333d47','#46525e'], accent:'#8fb0c9', liquid:null },
+  sump:    { name:'the sump',     style:'stone', floor:['#33544c','#3f6960','#4d7f74'], wall:['#1b2f2b','#284440','#365a53'], accent:'#63c7a6', liquid:'#2e6f63' },
+  depths:  { name:'the depths',   style:'stone', floor:['#3a3348','#4a4159','#5b506d'], wall:['#1e1a28','#2d2739','#3d354c'], accent:'#9b7ed6', liquid:null },
+  mire:    { name:'the mire',     style:'stone', floor:['#4d2f30','#61393a','#764648'], wall:['#2a1719','#3d2022','#502b2d'], accent:'#d06a6a', liquid:'#5c2426' },
+  hollow:  { name:'the hollow',   style:'flesh', floor:['#6e3a45','#874854','#a15866'], wall:['#3e1e26','#552a34','#6b3742'], accent:'#ff8fa3', liquid:null },
+  vault:   { name:'the vault',    style:'stone', floor:['#5a4a2c','#6f5c37','#877043'], wall:['#2f2716','#453a21','#5b4c2c'], accent:'#ffd166', liquid:null },
+  core:    { name:'the core',     style:'stone', floor:['#2b2b33','#3a3a44','#4b4b57'], wall:['#141418','#202027','#2e2e37'], accent:'#e8e8f0', liquid:null }
 };
 
 /* deterministic value noise so a tile looks the same every time it is baked */
@@ -56,6 +56,54 @@ const tileCache = new Map();
 export const FLOOR_VARIANTS = 8;
 
 /**
+ * Floorboards: horizontal boards with grain, seams and the odd nail.
+ * A cellar is built out of timber, and stone flags there always read wrong.
+ */
+function plankFloor(g, t, rng){
+  g.fillStyle = t.floor[0];
+  g.fillRect(0, 0, CELL, CELL);
+  const BH = 11;                         // board height
+  for (let y = -((rng() * BH) | 0); y < CELL; y += BH){
+    const tone = rng();
+    g.fillStyle = mix(t.floor[1], tone > 0.5 ? t.floor[2] : t.floor[0], Math.abs(tone - 0.5) * 0.7);
+    g.fillRect(0, y, CELL, BH - 1);
+    // grain: long, low-contrast streaks along the board
+    for (let i = 0; i < 5; i++){
+      g.globalAlpha = 0.06 + rng() * 0.1;
+      g.fillStyle = rng() > 0.5 ? t.floor[0] : t.floor[2];
+      const gy = y + 1 + ((rng() * (BH - 3)) | 0);
+      const gx = (rng() * CELL) | 0;
+      g.fillRect(gx, gy, 3 + ((rng() * 12) | 0), 1);
+    }
+    // a knot in the timber now and then
+    if (rng() > 0.86){
+      g.globalAlpha = 0.3;
+      g.fillStyle = t.floor[0];
+      g.beginPath();
+      g.ellipse((rng() * CELL) | 0, y + BH / 2, 2.2, 1.4, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+    // seam: dark gap under the board, light lip on top
+    g.fillStyle = t.wall[0];
+    g.globalAlpha = 0.55;
+    g.fillRect(0, y + BH - 1, CELL, 1);
+    g.globalAlpha = 0.16;
+    g.fillStyle = t.floor[2];
+    g.fillRect(0, y, CELL, 1);
+    g.globalAlpha = 1;
+    // nails at the board ends
+    if (rng() > 0.55){
+      g.globalAlpha = 0.4;
+      g.fillStyle = t.wall[0];
+      const nx = rng() > 0.5 ? 3 : CELL - 4;
+      g.fillRect(nx, y + ((BH / 2) | 0), 1, 1);
+      g.globalAlpha = 1;
+    }
+  }
+}
+
+/**
  * 32x32 floor slab, `v` picks one of FLOOR_VARIANTS.
  *
  * Built as four flagstones rather than flat noise: each stone gets its own
@@ -69,6 +117,13 @@ export function floorTile(theme, v = 0){
   const t = THEMES[theme] || THEMES.cellar;
   const rng = noise(hash(key));
   const [c, g] = surf(CELL, CELL);
+
+  if (t.style === 'plank'){
+    plankFloor(g, t, rng);
+    const sp = { c, w: CELL, h: CELL };
+    tileCache.set(key, sp);
+    return sp;
+  }
 
   // grout sits underneath and shows through the gaps between stones
   g.fillStyle = t.floor[0];
@@ -139,6 +194,16 @@ function mix(a, b, k){
   return '#' + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1);
 }
 
+/** The lit edge where a wall meets the floor, shared by both wall styles. */
+function applyLip(g, t, side){
+  g.fillStyle = t.wall[2];
+  if (side === 'top'){ g.fillRect(0, CELL - 3, CELL, 3); g.fillStyle = '#000'; g.globalAlpha = .25; g.fillRect(0, CELL - 1, CELL, 1); }
+  else if (side === 'bottom'){ g.fillRect(0, 0, CELL, 2); }
+  else if (side === 'left'){ g.fillRect(CELL - 2, 0, 2, CELL); }
+  else if (side === 'right'){ g.fillRect(0, 0, 2, CELL); }
+  g.globalAlpha = 1;
+}
+
 /**
  * Wall slab. `side` is 'top' | 'bottom' | 'left' | 'right' | 'corner' — the top
  * face gets a lit lip so the room reads as a box rather than a flat frame.
@@ -149,6 +214,43 @@ export function wallTile(theme, side = 'top', v = 0){
   const t = THEMES[theme] || THEMES.cellar;
   const rng = noise(hash(key));
   const [c, g] = surf(CELL, CELL);
+
+  if (t.style === 'plank'){
+    // vertical boarding: a timber cellar is panelled, not bricked
+    g.fillStyle = t.wall[0];
+    g.fillRect(0, 0, CELL, CELL);
+    const BW = 8;
+    for (let x = 0; x < CELL; x += BW){
+      const tone = rng();
+      g.fillStyle = mix(t.wall[1], tone > 0.5 ? t.wall[2] : t.wall[0], Math.abs(tone - 0.5) * 0.8);
+      g.fillRect(x + 1, 0, BW - 1, CELL);
+      for (let i = 0; i < 4; i++){
+        g.globalAlpha = 0.07 + rng() * 0.11;
+        g.fillStyle = rng() > 0.5 ? t.wall[0] : t.wall[2];
+        g.fillRect(x + 1 + ((rng() * (BW - 2)) | 0), (rng() * CELL) | 0, 1, 3 + ((rng() * 9) | 0));
+      }
+      g.globalAlpha = 1;
+      g.fillStyle = t.wall[0];
+      g.globalAlpha = 0.6;
+      g.fillRect(x, 0, 1, CELL);
+      g.globalAlpha = 0.14;
+      g.fillStyle = t.wall[2];
+      g.fillRect(x + 1, 0, 1, CELL);
+      g.globalAlpha = 1;
+    }
+    // cross beam, so the panelling has some structure
+    if (side === 'top' || side === 'bottom'){
+      g.globalAlpha = 0.3;
+      g.fillStyle = t.wall[0];
+      g.fillRect(0, side === 'top' ? 10 : 18, CELL, 3);
+      g.globalAlpha = 1;
+    }
+    applyLip(g, t, side);
+    const sp = { c, w: CELL, h: CELL };
+    tileCache.set(key, sp);
+    return sp;
+  }
+
   // mortar behind, bricks laid on top so the gaps are real rather than drawn
   g.fillStyle = t.wall[0];
   g.fillRect(0, 0, CELL, CELL);
@@ -190,13 +292,7 @@ export function wallTile(theme, side = 'top', v = 0){
     g.fillRect((rng() * CELL) | 0, (rng() * CELL) | 0, 1, 1);
   }
   g.globalAlpha = 1;
-  // inner lip facing the play area
-  g.fillStyle = t.wall[2];
-  if (side === 'top'){ g.fillRect(0, CELL - 3, CELL, 3); g.fillStyle = '#000'; g.globalAlpha = .25; g.fillRect(0, CELL - 1, CELL, 1); }
-  else if (side === 'bottom'){ g.fillRect(0, 0, CELL, 2); }
-  else if (side === 'left'){ g.fillRect(CELL - 2, 0, 2, CELL); }
-  else if (side === 'right'){ g.fillRect(0, 0, 2, CELL); }
-  g.globalAlpha = 1;
+  applyLip(g, t, side);
   const s = { c, w: CELL, h: CELL };
   tileCache.set(key, s);
   return s;

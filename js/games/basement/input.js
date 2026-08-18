@@ -14,7 +14,7 @@ export const LAYOUTS = [
     name:'WASD + arrows',
     move:{ up:'KeyW', down:'KeyS', left:'KeyA', right:'KeyD' },
     aim:{ up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight' },
-    active:'KeyE', bomb:'Space', card:'KeyQ', map:'Tab', drop:'KeyR'
+    active:'Space', bomb:'KeyE', card:'KeyQ', map:'Tab', drop:'KeyR'
   },
   {
     name:'IJKL + numpad',
@@ -149,8 +149,8 @@ export class Input {
 export const CONTROL_HELP = [
   ['move', 'W A S D'],
   ['shoot', 'arrow keys, or hold left mouse'],
-  ['bomb', 'space'],
-  ['use item', 'E'],
+  ['use item', 'space'],
+  ['bomb', 'E'],
   ['card / pill', 'Q'],
   ['drop trinket', 'R'],
   ['map', 'hold Tab'],

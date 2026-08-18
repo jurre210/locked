@@ -13,11 +13,11 @@ import { Game } from './game.js';
 import { Input } from './input.js';
 import { Net, snapshot, floorSnapshot } from './net.js';
 import { RemoteGame } from './remote.js';
-import { makeMode, modeSeed } from './modes.js';
+import { makeMode, resolveSeed } from './modes.js';
 import { CHARACTERS } from './characters.js';
 import { COUNTS } from './items.js';
 import { BOSSES } from './bosses.js';
-import { sfx } from './sfx.js';
+import { sfx, setSilent } from './sfx.js';
 import {
   titleScreen, characterScreen, modeScreen, coopScreen, netScreen,
   helpScreen, bestiaryScreen, pauseScreen, overScreen
@@ -59,6 +59,7 @@ const BASEMENT = {
     let modeId = p.mode || 'normal';
     let challengeId = p.challenge || 'bareHands';
     let locals = p.locals || 1;
+    let seedText = '';
 
     /* ---- shell ---- */
     const canvas = el('canvas', { class:'bm-canvas', width:VW, height:VH });
@@ -175,6 +176,8 @@ const BASEMENT = {
         mode: modeId, challenge: challengeId,
         onPick: id => { modeId = id; savePrefs({ ...prefs(), mode:id }); },
         onPickChallenge: id => { challengeId = id; savePrefs({ ...prefs(), challenge:id }); },
+        seed: seedText,
+        onSeed: v => { seedText = v; },
         onBack: goTitle,
         onStart: () => startRun()
       }));
@@ -265,11 +268,13 @@ const BASEMENT = {
       const chars = [charId];
       for (let i = 1; i < count; i++) chars.push(CHARACTERS[(i * 5) % CHARACTERS.length].id);
 
+      const seed = resolveSeed(mode, seedText);
       game = new Game({
-        canvas, input, mode, seed: modeSeed(mode), chars,
+        canvas, input, mode, seed: seed.value, chars,
         net: opts.online === 'host' ? net : null,
         onEnd: finish
       });
+      game.seedCode = seed.code;
       applyChallenge(game, mode);
       if (opts.online === 'host'){
         game.players[1].remote = true;
@@ -428,7 +433,9 @@ const BASEMENT = {
       step: (n = 60) => { for (let i = 0; i < n; i++) game.update(1 / 60); game.render(); },
       /** Run the real loop body by hand — rAF is throttled when the pane is hidden. */
       tick: (n = 1, dt = 1 / 60) => { for (let i = 0; i < n; i++) loop(performance.now() + i * dt * 1000); },
-      goTitle
+      goTitle,
+      /** Mute the game for automated checks. Never touches the saved volume. */
+      silence: (v = true) => setSilent(v)
     };
     life.offs.push(() => { running = false; try { net?.close(); } catch (e){} delete window.__basement; });
 
