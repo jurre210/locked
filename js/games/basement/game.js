@@ -437,16 +437,20 @@ export class Game {
    */
   update(dt, allowEdges = true){
     this.allowEdges = allowEdges;
-    if (this.over) { this.time += dt; this.tickCosmetics(dt); return; }
     this.time += dt;
-    if (this.banner) this.banner.t -= dt;
-    if (this.toast) this.toast.t -= dt;
-    this.shakeT = Math.max(0, this.shakeT - dt);
 
+    // Timers run even after the run is over — the death and victory screens are
+    // themselves scheduled on one, so returning early here froze the game on the
+    // "you died" banner with no way back to the menu.
     for (let i = this.timers.length - 1; i >= 0; i--){
       this.timers[i].t -= dt;
       if (this.timers[i].t <= 0){ this.timers[i].fn(); this.timers.splice(i, 1); }
     }
+
+    if (this.over) { this.tickCosmetics(dt); return; }
+    if (this.banner) this.banner.t -= dt;
+    if (this.toast) this.toast.t -= dt;
+    this.shakeT = Math.max(0, this.shakeT - dt);
 
     const frozen = this.timeStopT > 0;
     if (frozen) this.timeStopT -= dt;
@@ -1167,13 +1171,17 @@ export class Game {
   /* ---------------- props ---------------- */
   addProp(p){
     p.seed = this.rng() * 10;
+    p.delay = p.delay || 0;
     this.props.push(p);
     if (this.room.live && this.props !== this.room.live.props) this.room.live.props.push(p);
     return p;
   }
 
   updateProps(dt){
-    for (const pr of this.props){
+    // snapshot: taking an item can add a prop, and mutating while iterating is
+    // how the swap loop got started in the first place
+    for (const pr of this.props.slice()){
+      if (pr.delay > 0){ pr.delay -= dt; continue; }
       for (const pl of this.players){
         if (pl.dead) continue;
         const d = Math.hypot(pl.x - pr.x, pl.y - pr.y);
@@ -1337,7 +1345,7 @@ export class Game {
   floater(x, y, text, colour){ this.floaters.push({ x, y, text:String(text), colour, life:0.7, maxLife:0.7 }); }
   shake(n){ this.shakeT = 0.28; this.shakeMag = Math.max(this.shakeMag * (this.shakeT > 0 ? 1 : 0), n); }
   after(t, fn){ this.timers.push({ t, fn }); }
-  toastMsg(title, sub){ this.toast = { title, sub, t: 2.6 }; }
+  toastMsg(title, sub, item){ this.toast = { title, sub, item, t: 2.6 }; }
 
   blackHeartBurst(p){
     this.damageAll(24, p);
@@ -1635,11 +1643,21 @@ export class Game {
     }
   }
 
-  dropActive(p, item){ this.addProp({ kind:'pedestal', x:p.x + 26, y:p.y, item }); }
+  dropActive(p, item){
+    // Place it clear of the player and lock it briefly. Dropping on their feet
+    // meant swapping an active re-collected it on the very next frame, forever.
+    const a = this.rng() * Math.PI * 2;
+    const pr = this.addProp({
+      kind:'pedestal', item,
+      x: Math.max(ROOM_X + 26, Math.min(ROOM_X + ROOM_W - 26, p.x + Math.cos(a) * 52)),
+      y: Math.max(ROOM_Y + 26, Math.min(ROOM_Y + ROOM_H - 26, p.y + Math.sin(a) * 52))
+    });
+    pr.delay = 1.1;
+  }
 
   announceItem(p, item){
     sfx.item();
-    this.toastMsg(item.name, item.desc);
+    this.toastMsg(item.name, item.desc, item);
   }
 
   useConsumable(p){

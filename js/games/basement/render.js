@@ -14,6 +14,7 @@ import {
 import { draw, drawShadow, crisp, silhouette } from './sprite.js';
 import { enemySprite, bossSprite, familiarSprite } from './mobs-art.js';
 import { ROOM_TINT, mapBounds } from './floor.js';
+import { drawText, textWidth, wrap } from './font.js';
 
 const HEART_ART = {
   red: 'heartRed', half: 'heartHalf', soul: 'heartSoul', black: 'heartBlack',
@@ -257,17 +258,17 @@ function drawFloorProps(ctx, g){
 }
 
 function priceTag(ctx, g, x, y, price, kind = 'coin'){
+  const label = price === 0 ? 'FREE'
+    : kind === 'heart' ? `${price}♥` : kind === 'soul' ? `${price} SOUL` : String(price);
+  const w = textWidth(label) + 8;
   ctx.save();
-  ctx.font = '700 9px ui-monospace, monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const label = kind === 'heart' ? `${price}♥` : kind === 'soul' ? `${price} soul` : String(price);
-  const w = ctx.measureText(label).width + 10;
   ctx.fillStyle = 'rgba(6,4,10,.78)';
-  ctx.fillRect(x - w / 2, y - 6, w, 12);
-  ctx.fillStyle = price === 0 ? '#8fe0b0' : kind === 'coin' ? '#ffd166' : '#ff7a7a';
-  ctx.fillText(price === 0 ? 'free' : label, x, y);
+  ctx.fillRect(Math.round(x - w / 2), Math.round(y - 6), w, 12);
   ctx.restore();
+  drawText(ctx, label, x, y - 3, {
+    colour: price === 0 ? '#8fe0b0' : kind === 'coin' ? '#ffd166' : '#ff7a7a',
+    align: 'centre'
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -377,12 +378,8 @@ function drawPlayer(ctx, g, p){
 
   // co-op tag so you can find yourself in a crowd
   if (g.players.length > 1){
-    ctx.save();
-    ctx.font = '700 8px ui-monospace, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = PLAYER_COLOURS[p.index % 4];
-    ctx.fillText('P' + (p.index + 1), p.x, p.y - 26);
-    ctx.restore();
+    drawText(ctx, 'P' + (p.index + 1), p.x, p.y - 32,
+      { colour: PLAYER_COLOURS[p.index % 4], align: 'centre', shadow: '#000000' });
   }
 
   for (const o of p.orbitals){
@@ -438,13 +435,10 @@ function drawEffects(ctx, g){
     ctx.restore();
   }
   for (const f of g.floaters){
-    ctx.save();
-    ctx.globalAlpha = Math.max(0, f.life / f.maxLife);
-    ctx.font = '700 10px ui-monospace, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = f.colour || '#fff';
-    ctx.fillText(f.text, f.x, f.y);
-    ctx.restore();
+    drawText(ctx, f.text, f.x, f.y, {
+      colour: f.colour || '#fff', align: 'centre', shadow: '#000000',
+      alpha: Math.max(0, f.life / f.maxLife)
+    });
   }
 }
 
@@ -477,16 +471,12 @@ function drawHud(ctx, g){
     hx += g.players.length > 2 ? 108 : 148;
   }
 
+  drawItemRibbon(ctx, g);
   drawMinimap(ctx, g);
   if (g.bossRef && g.bossRef.hp > 0) drawBossBar(ctx, g);
 
   if (g.floor?.curse){
-    ctx.save();
-    ctx.font = '600 9px ui-monospace, monospace';
-    ctx.fillStyle = '#b07fff';
-    ctx.textAlign = 'center';
-    ctx.fillText(g.floor.curse.name.toLowerCase(), VW / 2, HUD_H - 6);
-    ctx.restore();
+    drawText(ctx, g.floor.curse.name, VW / 2, HUD_H - 11, { colour: '#b07fff', align: 'centre' });
   }
 }
 
@@ -513,24 +503,18 @@ function drawPlayerHud(ctx, g, p, x, y, hide){
     for (let c = 0; c < Math.ceil(p.soul / 2); c++) put('soul', p.soul - c * 2 === 1);
     for (let c = 0; c < Math.ceil(p.black / 2); c++) put('black', p.black - c * 2 === 1);
   } else {
-    ctx.save(); ctx.font = '600 10px ui-monospace, monospace'; ctx.fillStyle = '#6a6a80';
-    ctx.fillText('? ? ?', x + 4, y + 12); ctx.restore();
+    drawText(ctx, '? ? ?', x + 4, y + 8, { colour: '#6a6a80' });
   }
 
   // consumables
-  ctx.save();
-  ctx.font = '700 10px ui-monospace, monospace';
-  ctx.textBaseline = 'middle';
   const row = y + 32;
   const stat = (art, val, ox) => {
     draw(ctx, art, x + ox, row, { scale:1.1 });
-    ctx.fillStyle = '#e8e4f0';
-    ctx.fillText(String(val), x + ox + 8, row + 1);
+    drawText(ctx, String(val), x + ox + 8, row - 3, { colour: '#e8e4f0', shadow: '#000000' });
   };
   stat(PICKUP_ART.coin(), p.coins, 6);
   stat(PICKUP_ART.bomb(), p.bombs, 34);
   stat(PICKUP_ART.key(), p.keys, 62);
-  ctx.restore();
 
   // active + trinket + card
   const ax = x + 92;
@@ -553,6 +537,30 @@ function drawPlayerHud(ctx, g, p, x, y, hide){
   else if (p.pill) draw(ctx, pillSprite(p.pill.variant), ax + 24, y + 30, { scale:1 });
 }
 
+/**
+ * Everything player one is carrying, along the bottom of the HUD band.
+ * Without this the only record of a build is the pause screen, which is a bad
+ * place to keep the answer to "what do I actually have".
+ */
+function drawItemRibbon(ctx, g){
+  const p = g.players[0];
+  if (!p || !p.items.length) return;
+  const per = 11;
+  const max = Math.floor(190 / per);
+  const list = p.items.slice(-max);
+  const x0 = VW - 200, y0 = HUD_H - 13;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(6,4,10,.55)';
+  ctx.fillRect(x0 - 3, y0 - 2, list.length * per + 6, 13);
+  ctx.restore();
+
+  list.forEach((it, i) => draw(ctx, itemIcon(it), x0 + i * per + 5, y0 + 4, { scale: 0.75 }));
+  if (p.items.length > max)
+    drawText(ctx, '+' + (p.items.length - max), x0 + list.length * per + 6, y0 + 1,
+      { colour: '#8a8494' });
+}
+
 function drawBossBar(ctx, g){
   const b = g.bossRef;
   const w = 200, x = (VW - w) / 2, y = HUD_H + 6;
@@ -563,11 +571,8 @@ function drawBossBar(ctx, g){
   ctx.fillRect(x, y, w, 8);
   ctx.fillStyle = '#e5384a';
   ctx.fillRect(x, y, w * Math.max(0, b.hp / b.maxHp), 8);
-  ctx.font = '700 9px ui-monospace, monospace';
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#ffd8d8';
-  ctx.fillText(b.def.name.toLowerCase(), VW / 2, y + 20);
   ctx.restore();
+  drawText(ctx, b.def.name, VW / 2, y + 13, { colour: '#ffd8d8', align: 'centre', shadow: '#2a0a10' });
 }
 
 function drawMinimap(ctx, g){
@@ -607,18 +612,13 @@ function drawMinimap(ctx, g){
     }
     if (big && r.visited && r.type !== 'normal' && r.type !== 'start'){
       ctx.globalAlpha = 1;
-      ctx.fillStyle = '#05040a';
-      ctx.font = '700 8px ui-monospace, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(LABEL[r.type] || '', x + cw / 2, y + ch / 2 + 3);
+      drawText(ctx, LABEL[r.type] || '', x + cw / 2, y + ch / 2 - 3, { colour: '#05040a', align: 'centre' });
     }
   }
   ctx.globalAlpha = 1;
   if (big){
-    ctx.font = '600 11px ui-monospace, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#8a8494';
-    ctx.fillText(`${g.floor.name} — floor ${g.floor.depth + 1}`, VW / 2, y0 - 12);
+    drawText(ctx, `${g.floor.name} - floor ${g.floor.depth + 1}`, VW / 2, y0 - 16,
+      { colour: '#8a8494', align: 'centre' });
   }
   ctx.restore();
 }
@@ -632,49 +632,43 @@ const LABEL = { boss:'B', treasure:'I', shop:'$', secret:'?', supersecret:'??', 
 function drawOverlays(ctx, g){
   if (g.banner && g.banner.t > 0){
     const a = Math.min(1, g.banner.t / 0.5);
-    ctx.save();
-    ctx.globalAlpha = a;
-    ctx.textAlign = 'center';
-    ctx.font = '700 20px ui-monospace, monospace';
-    ctx.fillStyle = '#fff';
-    ctx.fillText(g.banner.title, VW / 2, VH / 2 - 10);
-    if (g.banner.sub){
-      ctx.font = '500 11px ui-monospace, monospace';
-      ctx.fillStyle = '#b0aac0';
-      ctx.fillText(g.banner.sub, VW / 2, VH / 2 + 10);
-    }
-    ctx.restore();
+    drawText(ctx, g.banner.title, VW / 2, VH / 2 - 22,
+      { colour: '#ffffff', align: 'centre', scale: 3, shadow: '#000000', alpha: a });
+    if (g.banner.sub)
+      drawText(ctx, g.banner.sub, VW / 2, VH / 2 + 8,
+        { colour: '#b0aac0', align: 'centre', shadow: '#000000', alpha: a });
   }
 
-  if (g.toast && g.toast.t > 0){
-    const a = Math.min(1, g.toast.t / 0.4);
-    ctx.save();
-    ctx.globalAlpha = a;
-    ctx.textAlign = 'center';
-    ctx.font = '700 11px ui-monospace, monospace';
-    const y = VH - 34;
-    const w = Math.max(ctx.measureText(g.toast.title).width, ctx.measureText(g.toast.sub || '').width) + 24;
-    ctx.fillStyle = 'rgba(6,4,10,.82)';
-    ctx.fillRect((VW - w) / 2, y - 14, w, g.toast.sub ? 34 : 22);
-    ctx.fillStyle = '#ffd166';
-    ctx.fillText(g.toast.title, VW / 2, y);
-    if (g.toast.sub){
-      ctx.font = '500 9px ui-monospace, monospace';
-      ctx.fillStyle = '#c8c2d4';
-      wrapText(ctx, g.toast.sub, VW / 2, y + 13, w - 16);
-    }
-    ctx.restore();
-  }
+  if (g.toast && g.toast.t > 0) drawPickupCard(ctx, g);
 }
 
-function wrapText(ctx, text, cx, y, maxW){
-  const words = String(text).split(' ');
-  let line = '', lines = [];
-  for (const w of words){
-    const test = line ? line + ' ' + w : w;
-    if (ctx.measureText(test).width > maxW && line){ lines.push(line); line = w; }
-    else line = test;
-  }
-  if (line) lines.push(line);
-  lines.slice(0, 2).forEach((l, i) => ctx.fillText(l, cx, y + i * 10));
+/**
+ * What you just picked up: icon, name and what it does. The old version was a
+ * bare label, which told you nothing about an item you had never seen before.
+ */
+function drawPickupCard(ctx, g){
+  const t = g.toast;
+  const a = Math.min(1, t.t / 0.4);
+  const icon = t.item ? itemIcon(t.item) : null;
+  const lines = t.sub ? wrap(t.sub, 210) : [];
+  const bodyW = Math.max(textWidth(t.title), ...lines.map(l => textWidth(l)), 60);
+  const w = Math.min(VW - 20, bodyW + (icon ? 46 : 20));
+  const h = 15 + lines.length * 9 + (icon ? 10 : 0);
+  const x = (VW - w) / 2, y = VH - h - 12;
+
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = 'rgba(6,4,10,.88)';
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,.16)';
+  ctx.fillRect(x, y, w, 1);
+  ctx.fillRect(x, y + h - 1, w, 1);
+  ctx.restore();
+
+  const tx = x + (icon ? 40 : 10);
+  if (icon) draw(ctx, icon, x + 22, y + h / 2, { scale: 1.5, alpha: a });
+  drawText(ctx, t.title, tx, y + 6, { colour: '#ffd166', alpha: a });
+  lines.forEach((l, i) => drawText(ctx, l, tx, y + 17 + i * 9, { colour: '#c8c2d4', alpha: a }));
 }
+
+

@@ -111,34 +111,121 @@ const ACC = {
 /* bodies (16 x 10) — three facings, two walk frames each              */
 /* ------------------------------------------------------------------ */
 /* b = shirt, k = shirt shade, s = bare skin (arms and legs). */
-const BODY = {
-  down: [[
-    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
-    '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','...osso..osso...',
-    '...osso..osso...','...oooo..oooo...'
-  ],[
-    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
-    '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','..osso....osso..',
-    '..osso....osso..','..oooo....oooo..'
-  ]],
-  side: [[
-    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbo..','.osbbbbbbbbbbo..',
-    '..okbbbbbbbbko..','..okbbbbbbbbko..','...okbbbbbbko...','....osssso......',
-    '...osso.sso.....','...oooo.ooo.....'
-  ],[
-    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbo..','.osbbbbbbbbbbo..',
-    '..okbbbbbbbbko..','..okbbbbbbbbko..','...okbbbbbbko...','....osssso......',
-    '..oss..osso.....','..oooo..ooo.....'
-  ]],
-  up: [[
-    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
-    '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','...osso..osso...',
-    '...osso..osso...','...oooo..oooo...'
-  ],[
-    '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
-    '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','..osso....osso..',
-    '..osso....osso..','..oooo....oooo..'
-  ]]
+const BODY_BUILDS = {
+  normal: {
+    down: [
+      [
+        '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+        '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','...osso..osso...',
+        '...osso..osso...','...oooo..oooo...'
+      ],
+      [
+        '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+        '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','..osso....osso..',
+        '..osso....osso..','..oooo....oooo..'
+      ]
+    ],
+    side: [
+      [
+        '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+        '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','....osssso......',
+        '...osso.sso.....','...oooo.ooo.....'
+      ],
+      [
+        '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+        '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','....osssso......',
+        '..oss..osso.....','..oooo..ooo.....'
+      ]
+    ],
+    up: [
+      [
+        '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+        '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','...osso..osso...',
+        '...osso..osso...','...oooo..oooo...'
+      ],
+      [
+        '...oooooooooo...','..obbbbbbbbbbo..','.osbbbbbbbbbbso.','.osbbbbbbbbbbso.',
+        '.oskbbbbbbbbkso.','..okbbbbbbbbko..','...okbbbbbbko...','..osso....osso..',
+        '..osso....osso..','..oooo....oooo..'
+      ]
+    ]
+  },
+  small: {
+    down: [
+      [
+        '....oooooooo....','...obbbbbbbbo...','..osbbbbbbbbso..','..osbbbbbbbbso..',
+        '...okbbbbbbko...','....okbbbbko....','................','....osso.osso...',
+        '....osso.osso...','....oooo.oooo...'
+      ],
+      [
+        '....oooooooo....','...obbbbbbbbo...','..osbbbbbbbbso..','..osbbbbbbbbso..',
+        '...okbbbbbbko...','....okbbbbko....','................','...osso...osso..',
+        '...osso...osso..','...oooo...oooo..'
+      ]
+    ],
+    side: [
+      [
+        '....oooooooo....','...obbbbbbbbo...','..osbbbbbbbbso..','..osbbbbbbbbso..',
+        '...okbbbbbbko...','....okbbbbko....','................','....osssso......',
+        '...osso.sso.....','...oooo.ooo.....'
+      ],
+      [
+        '....oooooooo....','...obbbbbbbbo...','..osbbbbbbbbso..','..osbbbbbbbbso..',
+        '...okbbbbbbko...','....okbbbbko....','................','....osssso......',
+        '..oss..osso.....','..oooo..ooo.....'
+      ]
+    ],
+    up: [
+      [
+        '....oooooooo....','...obbbbbbbbo...','..osbbbbbbbbso..','..osbbbbbbbbso..',
+        '...okbbbbbbko...','....okbbbbko....','................','....osso.osso...',
+        '....osso.osso...','....oooo.oooo...'
+      ],
+      [
+        '....oooooooo....','...obbbbbbbbo...','..osbbbbbbbbso..','..osbbbbbbbbso..',
+        '...okbbbbbbko...','....okbbbbko....','................','...osso...osso..',
+        '...osso...osso..','...oooo...oooo..'
+      ]
+    ]
+  },
+  broad: {
+    down: [
+      [
+        '..oooooooooooo..','.obbbbbbbbbbbbo.','osbbbbbbbbbbbbso','osbbbbbbbbbbbbso',
+        'oskbbbbbbbbbbkso','.okbbbbbbbbbbko.','..okbbbbbbbbko..','..osso....osso..',
+        '..osso....osso..','..oooo....oooo..'
+      ],
+      [
+        '..oooooooooooo..','.obbbbbbbbbbbbo.','osbbbbbbbbbbbbso','osbbbbbbbbbbbbso',
+        'oskbbbbbbbbbbkso','.okbbbbbbbbbbko.','..okbbbbbbbbko..','.osso......osso.',
+        '.osso......osso.','.oooo......oooo.'
+      ]
+    ],
+    side: [
+      [
+        '..oooooooooooo..','.obbbbbbbbbbbbo.','osbbbbbbbbbbbbso','osbbbbbbbbbbbbso',
+        'oskbbbbbbbbbbkso','.okbbbbbbbbbbko.','..okbbbbbbbbko..','....osssso......',
+        '...osso.sso.....','...oooo.ooo.....'
+      ],
+      [
+        '..oooooooooooo..','.obbbbbbbbbbbbo.','osbbbbbbbbbbbbso','osbbbbbbbbbbbbso',
+        'oskbbbbbbbbbbkso','.okbbbbbbbbbbko.','..okbbbbbbbbko..','....osssso......',
+        '..oss..osso.....','..oooo..ooo.....'
+      ]
+    ],
+    up: [
+      [
+        '..oooooooooooo..','.obbbbbbbbbbbbo.','osbbbbbbbbbbbbso','osbbbbbbbbbbbbso',
+        'oskbbbbbbbbbbkso','.okbbbbbbbbbbko.','..okbbbbbbbbko..','..osso....osso..',
+        '..osso....osso..','..oooo....oooo..'
+      ],
+      [
+        '..oooooooooooo..','.obbbbbbbbbbbbo.','osbbbbbbbbbbbbso','osbbbbbbbbbbbbso',
+        'oskbbbbbbbbbbkso','.okbbbbbbbbbbko.','..okbbbbbbbbko..','.osso......osso.',
+        '.osso......osso.','.oooo......oooo.'
+      ]
+    ]
+  },
 };
 
 /**
@@ -174,11 +261,12 @@ export function buildCharacter(def){
     { s: accS, dx:0, dy:0 }
   ]);
 
+  const BODY = BODY_BUILDS[def.build] || BODY_BUILDS.normal;
   const out = {};
   for (const facing of ['down', 'side', 'up']){
     const h = facing === 'up' ? backHead : head;
     out[facing] = BODY[facing].map((rows, i) => compose(
-      `${key}:${facing}:${i}`, 16, 22,
+      `${key}:${def.build || 'normal'}:${facing}:${i}`, 16, 22,
       [ { s: bake(rows, bodyPal), dx:0, dy:12 }, { s: h, dx:0, dy:0 } ]
     ));
   }
@@ -218,9 +306,10 @@ const E = {
     '...obbbbbbo...','..ob.oooo.bo..','.obo......obo.','.oo........oo.','..............','..............'
   ],
   spitter: [
-    '..............','....oooooo....','..oocccccco...','.occaaaaaaco..',
-    'ocaaaaaaaaaco.','oaaadddddaaao','oaaadddddaaao','ocaaaaaaaaaco.',
-    '.obaaaaaaabo..','..obbbbbbbo...','...oooooooo...','..............','..............','..............'
+    '..............','......oo......','...oooccooo...','..odddccdddo..',
+    '.oadodaadodao.','oaadddaadddaao','oaaaaaaaaaaaao','oaddddddddddao',
+    'oaaaooooooaaao','.obbbbbbbbbbo.','..obbbbbbbbo..','...ooobbooo...',
+    '......oo......','..............'
   ],
   charger: [
     '..............','..oo......oo..','.oaao....oaao.','.oaaooooooaao.',
@@ -248,14 +337,16 @@ const E = {
     '.occaaaacco...','..obbbbbbo....','...o.oo.o.....','..oo....oo....','..............','..............'
   ],
   crawler: [
-    '..............','.o..oooo...o..','.oo occo  oo..'.slice(0,14),'..oocaaacoo...',
-    '.ocaadddaaco..','ocaaddddda co'.slice(0,14),'ocaadddddaco..','.ocaaaaaaaco..',
-    '..occaaaacco..','.o.obbbbo..o..','.oo......oo...','..............','..............','..............'
+    '..............','.o..o.o.o.o..o','...oooooooo...','..occcccccco..',
+    '.oaddaaaaddao.','oaaoodaadoodao','oaaddaaaaddaao','oaaaaaaaaaaaao',
+    '.obbbbbbbbbbo.','..obbbbbbbbo..','.o.oooooooo..o','.o..o.o.o.o..o',
+    '.o..o.o.o.o..o','..............'
   ],
   spinner: [
-    '......oo......','....oocco.....','..oocaaacoo...','.ocaaddaaaco..',
-    'ocaadddddaaco.','oaddddddddaao','ocaadddddaaco.','.ocaaddaaaco..',
-    '..oocaaacoo...','....oocco.....','......oo......','..............','..............','..............'
+    '.....oao......','..o...o....o..','.oaoooaooooao.','..oaccccccao..',
+    '..occcccccco..','..oaaaaaaaaoo.','o.ododaadodoao','aoadodaadodoo.',
+    'o.oaaaaaaaao..','..obbbbbbbbo..','..oabbbbbbao..','.oaooooooooao.',
+    '..o..oao...o..','......o.......'
   ],
   gazer: [
     '..............','...oooooooo...','.occcccccccо..'.slice(0,14),'occaaaaaaacco.',
@@ -268,14 +359,16 @@ const E = {
     '...ocaaco.....','..o.obo.o.....','.o...o...o....','..............','..............','..............'
   ],
   boiler: [
-    '....oooooo....','..oodddddoo...','.oddaaaaddo...','oddaaaaaaddo..',
-    'odaadddd aado'.slice(0,14),'odaadddddaado','odaadddddaado','odaaddddaaado',
-    '.oddaaaaddo...','..obdddddbo...','...oooooo.....','..............','..............','..............'
+    '...o..o..o....','..odoodoodo...','...ooooooo....','..ooddddddoo..',
+    '.occcccccccco.','.oaaaaaaaaaao.','oaadodaadodaao','oaadodaadodaao',
+    'oaaadaaaadaaao','.oaaaaaaaaaao.','.obbbbbbbbbbo.','..oobbbbbboo..',
+    '....oooooo....','..............'
   ],
   leech: [
-    '..............','..............','....oooooo....','..occaaaacco..',
-    '.ocaadddaaco..','ocaaddddda co'.slice(0,14),'ocaadddddaco..','.ocaaaaaaaco..',
-    '..occbbbbco...','....oooooo....','..............','..............','..............','..............'
+    '..............','..............','.....oooo.....','...ooccccoo...',
+    '..occddddcco..','.oaaddooddaao.','.oaaadoodaaao.','oaaaaddddaaaao',
+    '.oaaaaaaaaaao.','.oaaaaaaaaaao.','..obbbbbbbbo..','...oobbbboo...',
+    '.....oooo.....','..............'
   ],
   spiderling: [
     '.o..........o.','..o..oooo..o..','...occaacco...','.o.ocaddaco.o.',
@@ -362,60 +455,60 @@ export const ENEMY_ART_KEYS = Object.keys(E);
 /* ------------------------------------------------------------------ */
 const B = {
   blob: [
-    '......oooooooo......','....oocccccccccoo...','..occcaaaaaaaccco...','.occaaaaaaaaaaacco..',
-    'occaaaaaaaaaaaaacco.','ocaaaaddddddaaaaaco.','ocaaaddddddddaaaaco.','oaaaadd oo dd aaaao'.slice(0,20),
-    'oaaaadd oo ddaaaaao','oaaaaddddddddaaaaao','oaaaaddddddddaaaaao','ocaaaaddddddaaaaaco',
-    'ocaaaaaaaaaaaaaaaco','.occaaaaaaaaaaacco..','..obbaaaaaaaabbo....','...obbbbbbbbbbo.....',
-    '....oobbbbbbboo.....','......oooooooo......','....................','....................'
+    '....................','......oooooooo......','....ooccccccccoo....','...occcccccccccco...',
+    '..occcccccccccccco..','.oaaaaaaaaaaaaaaaao.','.oaaaddaaaaaaddaaao.','oaaadoodaaaadoodaaao',
+    'oaaddooddaaddooddaao','oaaadoodaaaadoodaaao','oaaaaddaaaaaaddaaaao','oaaaaaaaaaaaaaaaaaao',
+    'oaaaaaaaaaaaaaaaaaao','.oaaaaddddddddaaaao.','.obbbbbbbbbbbbbbbbo.','..obbbbbbbbbbbbbbo..',
+    '...obbbbbbbbbbbbo...','....oobbbbbbbboo....','......oooooooo......','....................'
   ],
   bird: [
-    '.........oo.........','........occo........','.......ocaaco.......','......ocaaaaco......',
-    'oo...ocaadddaaco..oo','oao.ocaaddddddaco.oa'.slice(0,20),'oaaoocaadddddda co'.slice(0,20),'oaaaocaaaaaaaaaacoaa'.slice(0,20),
-    'oaaacaaaaaaaaaaaacaa'.slice(0,20),'.oaaaaaaaaaaaaaaaao.','..oaaaaaaaaaaaaaao..','...obaaaaaaaaaabo...',
-    '....obbaaaaaabbo....','.....obbbbbbbbo.....','......oo.oo.oo......','.....oao.oao.oao....',
-    '.....oao.oao.oao....','......oo.oo.oo......','....................','....................'
+    '....................','....................','........oooo........','......ooccccoo......',
+    '.oo..occcccccco..oo.','oaao.occcccccco.oaao','aaaaoadodaadodaoaaaa','aaaaoadodaadodaoaaaa',
+    'aaaaoaadaaaadaaoaaaa','aaaaoaaaaaaaaaaoaaaa','aaaaoaaaddddaaaoaaaa','aaaaoaaaaaaaaaaoaaaa',
+    'oooo.obbbbbbbbo.oooo','.....obbbbbbbbo.....','......oobbbboo......','..o.....ooooo.....o.',
+    '..o.....o...o.....o.','..o.....o...o.....o.','....................','....................'
   ],
   spider: [
-    'o................o..','.o..............o...','..o.oooooooooo.o....','...ooccccccccoo.....',
-    'o..occaaaaaacco..o..','.o.ocaadddddaaco.o..','..oocaddddddda co'.slice(0,20),'.oocaadd oo ddaacoo.',
-    'oocaaadd oo ddaaacoo','.ocaaaddddddddaaaco.','..ocaaaaaaaaaaaaco..','.o.occaaaaaaaacco.o.',
-    'o..o.obbbbbbbbo.o..o','.o....oooooooo....o.','o..o..o......o..o..o','.o...o........o...o.',
-    'o...o..........o...o','....................','....................','....................'
-  ],
-  maw: [
-    '....oooooooooooo....','..oocccccccccccco...','.occaaaaaaaaaaacco..','occaaaaaaaaaaaaacco.',
-    'ocaaaaaaaaaaaaaaaco.','oaoooooooooooooooao.','oaoddddddddddddoao..','oaodoooooooooodoao..',
-    'oaodo dd dd dd odoao'.slice(0,20),'oaodo dd dd dd odoao'.slice(0,20),'oaodoooooooooodoao..','oaodddddddddddd oao'.slice(0,20),
-    'oaoooooooooooooooao.','ocaaaaaaaaaaaaaaaco.','occaaaaaaaaaaaaacco.','.occcaaaaaaaaaccco..',
-    '..oobbbbbbbbbbboo...','....oooooooooooo....','....................','....................'
-  ],
-  eye: [
-    '.......oooooo.......','.....oocccccccoo....','...occcaaaaaaccco...','..occaaaaaaaaaacco..',
-    '.occaaaaaaaaaaaacco.','occaaaadddddaaaacco.','ocaaaadddddddaaaaco.','ocaaadddoooodddaaco.',
-    'oaaaaddoo  oodda ao'.slice(0,20),'oaaaaddo    odda aao'.slice(0,20),'oaaaaddoo  ooddaaaao','ocaaadddoooodddaaco.',
-    'ocaaaadddddddaaaaco.','occaaaadddddaaaacco.','.occaaaaaaaaaaaacco.','..occaaaaaaaaaacco..',
-    '...occcaaaaaaccco...','.....oocccccccoo....','.......oooooo.......','....................'
-  ],
-  wraith: [
-    '......oooooo........','....oocccccco.......','..occcaaaaaccо......'.slice(0,20),'.occaaaaaaaacco.....',
-    'occaaaddddaaaacco...','ocaaadd oo ddaaaco..','ocaaadd oo ddaaaco..','ocaaaddddddddaaaco..',
-    'ocaaaaaaaaaaaaaaco..','.ocaaaaaaaaaaaaco...','..ocaaaaaaaaaaco....','..ocaaaaaaaaaaco....',
-    '.ocaaaaaaaaaaaaco...','ocaaaaaaaaaaaaaaco..','.oc.oca.aco.acо.....'.slice(0,20),'..o..o.o.o.o..o.....',
+    '....................','....................','....................','........oooo........',
+    '......ooccccoo......','..o..occcccccco..o..','..o.occcccccccco.o..','.o.oaddddaaddddao.o.',
+    '.oooadoodaadoodaooo.','..ooaddddaaddddaoo..','.o.oaaaaaaaaaaaao.o.','.oooaaaaaaaaaaaaooo.',
+    '..o.obbddddddbbo.o..','.o...obbbbbbbbo...o.','.o....oobbbboo....o.','........oooo........',
     '....................','....................','....................','....................'
   ],
+  maw: [
+    '....................','.........oo.........','.....ooooccoooo.....','....occcccccccco....',
+    '...occcccccccccco...','..occcccccccccccco..','.oaddddddddddddddao.','.oaddcdcdcdcdcdddao.',
+    'oaaddooooooooooddaao','oaaddooooooooooddaao','oaaddooooooooooddaao','oaaddooooooooooddaao',
+    '.oaddcdcdcdcdcdddao.','.oaddddddddddddddao.','..obbbbbbbbbbbbbbo..','...obbbbbbbbbbbbo...',
+    '....obbbbbbbbbbo....','.....oooobboooo.....','.........oo.........','....................'
+  ],
+  eye: [
+    '.........oo.........','......oooccooo......','....ooccccccccoo....','...occcccccccccco...',
+    '..occcccccccccccco..','..oaaaaddddddaaaao..','.oaaaaddddddddaaaao.','.oaaadddcooddddaaao.',
+    '.oaaaddcccoodddaaao.','oaaaaddocooooddaaaao','oaaaaddooooooddaaaao','.oaaadddoooodddaaao.',
+    '.oaaaddddooddddaaao.','.oaaaaddddddddaaaao.','..obbbbddddddbbbbo..','..obbbbbbbbbbbbbbo..',
+    '...obbbbbbbbbbbbo...','....oobbbbbbbboo....','......ooobbooo......','.........oo.........'
+  ],
+  wraith: [
+    '....................','.......oooooo.......','.....ooccccccoo.....','....occcccccccco....',
+    '....occcccccccco....','...oaaddaaaaddaao...','...oadoddaaddodao...','..oaadoddaaddodaao..',
+    '..oaaaddaaaaddaaao..','...oaaaaaaaaaaaao...','..ooaaaaaaaaaaaaoo..','.oaabaaaabaaaabaaao.',
+    '.oabaaaabaaaabaaaao.','..oaaaabaaaabaaaao..','..oaaabaaaabaaaabo..','...oabaaaabaaaabo...',
+    '...obaaaabaaaabao...','....oaoaboaaobao....','.....o.oo.oo.oo.....','....................'
+  ],
   golem: [
-    '....oooooooooooo....','...obbbbbbbbbbbbo...','..obcccccccccccbo...','.obcaaaaaaaaaaacbo..',
-    'obcaaddddddddaaacbo.','obcaadd oo oo ddacbo'.slice(0,20),'obcaadd oo oo ddacbo'.slice(0,20),'obcaaddddddddaaacbo.',
-    'obcaaaaaaaaaaaaacbo.','.obcaaaaaaaaaaacbo..','..obcccccccccccbo...','..obbbbbbbbbbbbbo...',
-    '.ob.obbbbbbbbo.obo..','ob...obbbbbbo...obo.','o.....oooooo.....o..','....o..o..o..o......',
-    '...oao.oao.oao......','....oo..oo..oo......','....................','....................'
+    '....................','...oooooooooooooo...','..obccccccccccccbo..','..obccccccccccccbo..',
+    '..obccccccccccccbo..','..obccccccccccccbo..','..obadddaaaadddabo..','..obadoddaaddodabo..',
+    '..obadddaaaadddabo..','..obaaaaaaaaaaaabo..','..obaaaaaaaaaaaabo..','..obaaddddddddaabo..',
+    '..obaaaaaaaaaaaabo..','..obaaaaaaaaaaaabo..','..obbbbbbbbbbbbbbo..','..obbbbbbbbbbbbbbo..',
+    '..obbbbbbbbbbbbbbo..','..ooooooooooooooo.o.','..o.....o...o.....o.','..o.....o...o.....o.'
   ],
   pile: [
-    '........oooo........','......oocccco.......','....occcaaaccо......'.slice(0,20),'...occaaaaaacco.....',
-    '..occaaaddaaaacco...','.ocaaaadddda aaaco'.slice(0,20),'.ocaaaddddddaaaco...','occaaaddddddaaacco..',
-    'ocaaaaddddddaaaaco..','ocaaaaaaaaaaaaaaco..','occaaaaaaaaaaaacco..','.occaaaaaaaaaacco...',
-    '..occaaaaaaaacco....','...obbaaaaaabbo.....','..obbbbbbbbbbbbo....','.obbbbbbbbbbbbbbo...',
-    'obbbbbbbbbbbbbbbbo..','.oooooooooooooooo...','....................','....................'
+    '....................','....................','....................','.........oo.........',
+    '........occo........','........occo........','.......occcco.......','.....ooccccccoo.....',
+    '....oddddaaddddo....','....odoodaadoodo....','....oddddaaddddo....','...oaaaaaaaaaaaao...',
+    '...oaaaddddddaaao...','..oaaaaaaaaaaaaaao..','.oaaaaaaaaaaaaaaaao.','obbbbbbbbbbbbbbbbbbo',
+    'obbbbbbbbbbbbbbbbbbo','bbbbbbbbbbbbbbbbbbbb','oooooooooooooooooooo','....................'
   ]
 };
 
