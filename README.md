@@ -18,7 +18,14 @@ onto the page to view it locally; it is never uploaded.
    constraints and drivers. It also writes a poster (`models/my-model.jpg`) and adds the model
    to the top of `models/models.json`.
    Procedural materials are flattened to plain colours, because glTF can't carry node setups.
-2. Run `2 - PUBLISH.cmd` to commit and push. GitHub Pages rebuilds in about a minute.
+2. Optional surroundings: render a 360° panorama of the model's own scene from where the model
+   stands (equirectangular camera looking down Blender +X, e.g. `SurRon\scripts\export_env.py`).
+   Then add an `env` block to the model's entry:
+   `{"background": "...jpg", "hdr": "...hdr", "height": camera height, "radius": 60, "sun": [x,y,z]}`
+   (plus optional `sunIntensity`, `envIntensity`, `exposure`, `shadow`).
+   The viewer projects the panorama around the model with a flat ground it stands on, lights the
+   model with the HDR, and adds a sun light so the shadow matches. B toggles it.
+3. Run `2 - PUBLISH.cmd` to commit and push. GitHub Pages rebuilds in about a minute.
 
 ## Local preview
 

@@ -4,6 +4,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('view');
@@ -54,6 +56,31 @@ const LIGHTS = [
 ];
 let lightIdx = 0;
 
+// per-model surroundings: a 360° render of the model's own scene, projected with a flat ground
+const env = { data: null, sky: null, pmrem: null, on: true, cache: new Map() };
+const texLoader = new THREE.TextureLoader();
+const hdrLoader = new RGBELoader();
+
+async function loadEnv(spec) {
+  if (!spec) { env.data = null; applyLight(); return; }
+  let e = env.cache.get(spec.background);
+  if (!e) {
+    const [bg, hdr] = await Promise.all([texLoader.loadAsync(spec.background), hdrLoader.loadAsync(spec.hdr)]);
+    bg.mapping = THREE.EquirectangularReflectionMapping;
+    bg.colorSpace = THREE.SRGBColorSpace;
+    bg.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    hdr.mapping = THREE.EquirectangularReflectionMapping;
+    const sky = new GroundedSkybox(bg, spec.height, spec.radius, 160);
+    sky.position.y = spec.height - 0.01;
+    sky.material.toneMapped = false;       // the panorama is already graded like the Blender renders
+    e = { spec, sky, pmrem: pmrem.fromEquirectangular(hdr).texture };
+    hdr.dispose();
+    env.cache.set(spec.background, e);
+  }
+  env.data = e;
+  applyLight();
+}
+
 // ---------------------------------------------------------------- state
 const state = { models: [], current: null, root: null, mixer: null, duration: 0, playing: true, speed: 1,
                 radius: 1, center: new THREE.Vector3(), wire: false, seeking: false };
@@ -72,17 +99,44 @@ function resize() {
 new ResizeObserver(resize).observe(stage);
 
 function applyLight() {
-  const L = LIGHTS[lightIdx];
-  scene.environmentIntensity = L.env;
-  sun.intensity = L.sun;
-  sun.color.setHex(L.sunCol);
   const r = state.radius;
-  sun.position.set(...L.dir).normalize().multiplyScalar(r * 4).add(state.center);
+  const E = env.on && env.data;
+  for (const e of env.cache.values()) scene.remove(e.sky);
+  $('t-bg').hidden = !env.data;
+  $('t-bg').classList.toggle('on', !!E);
+  $('t-light').hidden = !!E;
+  if (E) {
+    // the scene's own sky: HDR light + matching sun + projected surroundings
+    const s = E.spec;
+    scene.add(E.sky);
+    scene.environment = E.pmrem;
+    scene.environmentIntensity = s.envIntensity ?? 1.0;
+    sun.intensity = s.sunIntensity ?? 3.0;
+    sun.color.set(s.sunColor ?? '#fff1dc');
+    sun.position.set(...s.sun).normalize().multiplyScalar(r * 4).add(state.center);
+    rim.intensity = 0;
+    renderer.toneMappingExposure = s.exposure ?? 0.8;
+    shadowFloor.material.opacity = s.shadow ?? 0.55;
+    grid.visible = false;
+    controls.maxPolarAngle = Math.PI / 2 - 0.04;          // stay above the projected ground
+    controls.maxDistance = Math.min(r * 12, s.radius * 0.45);
+    $('light-name').textContent = 'scene';
+  } else {
+    const L = LIGHTS[lightIdx];
+    scene.environment = envTex;
+    scene.environmentIntensity = L.env;
+    sun.intensity = L.sun;
+    sun.color.setHex(L.sunCol);
+    sun.position.set(...L.dir).normalize().multiplyScalar(r * 4).add(state.center);
+    rim.intensity = L.rim;
+    rim.position.set(-L.dir[0], 2, -L.dir[2]).normalize().multiplyScalar(r * 4).add(state.center);
+    renderer.toneMappingExposure = L.exp;
+    shadowFloor.material.opacity = 0.45;
+    controls.maxPolarAngle = Math.PI;
+    controls.maxDistance = r * 12;
+    $('light-name').textContent = L.name;
+  }
   sun.target.position.copy(state.center);
-  rim.intensity = L.rim;
-  rim.position.set(-L.dir[0], 2, -L.dir[2]).normalize().multiplyScalar(r * 4).add(state.center);
-  renderer.toneMappingExposure = L.exp;
-  $('light-name').textContent = L.name;
 }
 
 function frameView() {
@@ -98,7 +152,6 @@ function frameView() {
   camera.updateProjectionMatrix();
   controls.target.copy(c);
   controls.minDistance = r * 0.25;
-  controls.maxDistance = r * 12;
   controls.update();
 }
 
@@ -160,8 +213,8 @@ function load(url, meta, size) {
     shadowFloor.scale.setScalar(sph.radius * 3);
     grid.scale.setScalar(sph.radius * 4);
     const sc = sun.shadow.camera;
-    sc.left = sc.bottom = -sph.radius * 1.6;
-    sc.right = sc.top = sph.radius * 1.6;
+    sc.left = sc.bottom = -sph.radius * 2.6;
+    sc.right = sc.top = sph.radius * 2.6;
     sc.near = 0.01;
     sc.far = sph.radius * 10;
     sc.updateProjectionMatrix();
@@ -244,6 +297,9 @@ async function select(m) {
       size = +h.headers.get('content-length') || 0;
     } catch { size = 0; }
   }
+  $('loading').hidden = false;
+  $('load-txt').textContent = 'loading surroundings';
+  try { await loadEnv(m.env); } catch (err) { console.warn('environment failed', err); await loadEnv(null); }
   load(m.url || m.file, m, size);
 }
 
@@ -289,6 +345,7 @@ $('t-rotate').onclick = () => {
 };
 $('t-wire').onclick = () => setWire(!state.wire);
 $('t-light').onclick = () => { lightIdx = (lightIdx + 1) % LIGHTS.length; applyLight(); };
+$('t-bg').onclick = () => { env.on = !env.on; applyLight(); };
 $('t-grid').onclick = () => { grid.visible = !grid.visible; $('t-grid').classList.toggle('on', grid.visible); };
 $('t-reset').onclick = frameView;
 $('t-full').onclick = () => {
@@ -309,6 +366,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'a') $('t-rotate').click();
   else if (k === 'w') $('t-wire').click();
   else if (k === 'l') $('t-light').click();
+  else if (k === 'b') $('t-bg').click();
   else if (k === 'g') $('t-grid').click();
   else if (k === 'r') frameView();
   else if (k === 'f') $('t-full').click();
