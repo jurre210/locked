@@ -6,6 +6,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
+import { applyWear } from './wear.js?v=1';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('view');
@@ -34,7 +35,7 @@ controls.autoRotateSpeed = 1.2;
 
 const sun = new THREE.DirectionalLight(0xffffff, 2.2);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(4096, 4096);
 sun.shadow.bias = -0.0002;
 sun.shadow.normalBias = 0.02;
 scene.add(sun, sun.target);
@@ -193,7 +194,11 @@ function load(url, meta, size) {
       o.receiveShadow = true;
       const g = o.geometry;
       tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
-      (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => mats.add(m));
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
+        mats.add(m);
+        const w = m.userData && m.userData.wear;      // Blender's procedural wear recipe
+        if (w) { try { applyWear(m, typeof w === 'string' ? JSON.parse(w) : w); } catch (e) { console.warn(e); } }
+      });
     });
     // sit it on the floor, centred (precise: rotated parts would otherwise inflate the box)
     root.updateMatrixWorld(true);
@@ -297,6 +302,7 @@ async function select(m) {
       size = +h.headers.get('content-length') || 0;
     } catch { size = 0; }
   }
+  setupPhoto(m);
   $('loading').hidden = false;
   $('load-txt').textContent = 'loading surroundings';
   try { await loadEnv(m.env); } catch (err) { console.warn('environment failed', err); await loadEnv(null); }
@@ -368,10 +374,71 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'w') $('t-wire').click();
   else if (k === 'l') $('t-light').click();
   else if (k === 'b') $('t-bg').click();
+  else if (k === 'p' && photo.n) setMode(!photo.on);
+  else if (photo.on && (k === 'arrowleft' || k === 'arrowright')) showFrame(photo.idx + (k === 'arrowleft' ? 1 : -1));
   else if (k === 'g') $('t-grid').click();
   else if (k === 'r') frameView();
   else if (k === 'f') $('t-full').click();
 });
+
+// ---------------------------------------------------------------- photo mode: cycles turntable
+const photo = { on: false, frames: [], idx: 0, drag: null, acc: 0, n: 0 };
+function setupPhoto(m) {
+  const tt = m && m.turntable;
+  $('modes').hidden = !tt;
+  photo.frames = [];
+  photo.n = tt ? tt.count : 0;
+  photo.dir = tt ? tt.dir : '';
+  if (photo.on) setMode(false);
+}
+function frameUrl(i) { return `${photo.dir}${String(i).padStart(3, '0')}.jpg`; }
+function showFrame(i) {
+  photo.idx = ((Math.round(i) % photo.n) + photo.n) % photo.n;
+  $('photo').src = frameUrl(photo.idx);
+}
+async function setMode(p) {
+  photo.on = p;
+  $('mode-3d').classList.toggle('on', !p);
+  $('mode-photo').classList.toggle('on', p);
+  $('photo').hidden = !p;
+  $('photo-hint').hidden = !p;
+  canvas.style.visibility = p ? 'hidden' : '';
+  $('transport').hidden = p || !state.mixer;
+  ['t-bg', 't-wire', 't-light', 't-grid', 't-reset', 't-shot'].forEach((id) => {
+    $(id).style.display = p ? 'none' : '';
+  });
+  $('light-name').style.display = p ? 'none' : '';
+  if (p && !photo.frames.length) {     // preload every angle once so dragging is instant
+    $('loading').hidden = false;
+    let done = 0;
+    await Promise.all([...Array(photo.n).keys()].map((i) => new Promise((res) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        done++;
+        $('bar').style.width = Math.round((done / photo.n) * 100) + '%';
+        $('load-txt').textContent = `loading cycles renders ${done}/${photo.n}`;
+        res();
+      };
+      img.src = frameUrl(i);
+      photo.frames.push(img);
+    })));
+    $('loading').hidden = true;
+  }
+  if (p) showFrame(photo.idx);
+}
+$('mode-3d').onclick = () => setMode(false);
+$('mode-photo').onclick = () => setMode(true);
+$('photo').addEventListener('pointerdown', (e) => {
+  photo.drag = e.clientX;
+  photo.acc = photo.idx;
+  $('photo').setPointerCapture(e.pointerId);
+});
+$('photo').addEventListener('pointermove', (e) => {
+  if (photo.drag === null) return;
+  const w = stage.clientWidth;
+  showFrame(photo.acc - ((e.clientX - photo.drag) / w) * photo.n * 0.9);
+});
+$('photo').addEventListener('pointerup', () => { photo.drag = null; });
 
 // drag & drop your own .glb (stays on your computer, nothing is uploaded)
 let dragDepth = 0;
@@ -392,9 +459,14 @@ window.addEventListener('drop', (e) => {
 });
 
 // ---------------------------------------------------------------- loop
+let spinT = 0;
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
+  if (photo.on) {                       // the 3d scene is hidden; only the auto-spin runs
+    if (controls.autoRotate && photo.drag === null && (spinT += dt) > 1 / 14) { spinT = 0; showFrame(photo.idx - 1); }
+    return;
+  }
   if (state.mixer && state.playing && !state.seeking) {
     state.mixer.update(dt * state.speed);
   }

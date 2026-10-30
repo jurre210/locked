@@ -25,7 +25,12 @@ onto the page to view it locally; it is never uploaded.
    (plus optional `sunIntensity`, `envIntensity`, `exposure`, `shadow`).
    The viewer projects the panorama around the model with a flat ground it stands on, lights the
    model with the HDR, and adds a sun light so the shadow matches. B toggles it.
-3. Run `2 - PUBLISH.cmd` to commit and push. GitHub Pages rebuilds in about a minute.
+3. Optional photo mode: a Cycles turntable (`000.jpg` … in a folder, e.g. `SurRon\scripts\export_turntable.py`),
+   added as `"turntable": {"dir": "models/<id>-turntable/", "count": 72}`. The viewer gets a 3d / photo switch:
+   drag to spin, arrow keys step, P toggles.
+   Materials can also carry `extras.wear` (their Blender procedural recipe). `js/wear.js` rebuilds the dust,
+   roughness breakup and micro grain from it in the real-time shader.
+4. Run `2 - PUBLISH.cmd` to commit and push. GitHub Pages rebuilds in about a minute.
 
 ## Local preview
 

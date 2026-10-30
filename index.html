@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>locked — 3d</title>
   <meta name="description" content="3d models made in blender, viewable in the browser">
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=4">
   <script type="importmap">
   {
     "imports": {
@@ -24,6 +24,12 @@
   <main class="layout">
     <section class="stage" id="stage">
       <canvas id="view"></canvas>
+      <img id="photo" alt="" draggable="false" hidden>
+      <div class="modes" id="modes" hidden>
+        <button id="mode-3d" class="on" title="real-time 3d">3d</button>
+        <button id="mode-photo" title="cycles render turntable: drag to spin">photo</button>
+      </div>
+      <div class="photo-hint" id="photo-hint" hidden>drag to spin · rendered in cycles</div>
 
       <div class="tools">
         <button class="tool" id="t-bg" title="surroundings on / off (B)" hidden>◐</button>
@@ -64,6 +70,6 @@
   </main>
 
   <!-- bump ?v= on every viewer change: Pages lets browsers cache files for 10 minutes -->
-  <script type="module" src="js/viewer.js?v=5"></script>
+  <script type="module" src="js/viewer.js?v=6"></script>
 </body>
 </html>
