@@ -300,7 +300,8 @@ async function select(m) {
   $('loading').hidden = false;
   $('load-txt').textContent = 'loading surroundings';
   try { await loadEnv(m.env); } catch (err) { console.warn('environment failed', err); await loadEnv(null); }
-  load(m.url || m.file, m, size);
+  // ?v=<size> so a re-exported model is never served from a stale browser cache
+  load(m.url || (m.file + (m.bytes ? '?v=' + m.bytes : '')), m, size);
 }
 
 async function init() {
