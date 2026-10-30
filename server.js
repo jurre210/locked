@@ -8,7 +8,8 @@ const PORT = process.env.PORT || 5180;
 const TYPES = {
   '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
   '.css':'text/css; charset=utf-8', '.json':'application/json', '.svg':'image/svg+xml',
-  '.png':'image/png', '.ico':'image/x-icon', '.webmanifest':'application/manifest+json'
+  '.png':'image/png', '.ico':'image/x-icon', '.webmanifest':'application/manifest+json',
+  '.jpg':'image/jpeg', '.glb':'model/gltf-binary', '.gltf':'model/gltf+json', '.bin':'application/octet-stream'
 };
 
 http.createServer((req, res) => {
@@ -24,4 +25,4 @@ http.createServer((req, res) => {
     });
     res.end(buf);
   });
-}).listen(PORT, () => console.log(`locked → http://localhost:${PORT}`));
+}).listen(PORT, () => console.log(`locked 3d → http://localhost:${PORT}`));

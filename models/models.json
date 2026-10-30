@@ -1,0 +1,14 @@
+{
+  "models": [
+    {
+      "id": "surron-light-bee-x",
+      "name": "sur-ron light bee x",
+      "file": "models/surron-light-bee-x.glb",
+      "poster": "models/surron-light-bee-x.jpg",
+      "bytes": 3041720,
+      "made": "2026-10-30",
+      "tags": ["electric dirt bike", "animated"],
+      "description": "Electric dirt bike built from scratch in Blender. 19\" spoked wheels with knobby tyres, upside-down forks, coil-over shock, a 130-link chain driven by the rear wheel. Press play for the ride: launch, suspension over the whoops, lean through the bends and the jump, played in place."
+    }
+  ]
+}

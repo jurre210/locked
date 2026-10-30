@@ -1,0 +1,360 @@
+// locked — 3d: a gallery + viewer for models exported from Blender (.glb, Draco ok, animations ok).
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const $ = (id) => document.getElementById(id);
+const canvas = $('view');
+const stage = $('stage');
+
+// ---------------------------------------------------------------- renderer / scene
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;   // keeps blacks black (AgX lifted them to grey)
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environment = envTex;
+
+const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 500);
+camera.position.set(3, 1.5, 3);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.autoRotateSpeed = 1.2;
+
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0002;
+sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+const rim = new THREE.DirectionalLight(0x9fb4ff, 0.0);
+scene.add(rim);
+
+const shadowFloor = new THREE.Mesh(new THREE.CircleGeometry(1, 96), new THREE.ShadowMaterial({ opacity: 0.45 }));
+shadowFloor.rotation.x = -Math.PI / 2;
+shadowFloor.receiveShadow = true;
+scene.add(shadowFloor);
+const grid = new THREE.GridHelper(1, 20, 0x2a2a30, 0x18181c);
+grid.visible = false;
+scene.add(grid);
+
+const LIGHTS = [
+  { name: 'studio', env: 0.6, sun: 2.4, sunCol: 0xffffff, dir: [3, 5, 2], rim: 0.0, exp: 0.95 },
+  { name: 'sunset', env: 0.3, sun: 3.4, sunCol: 0xffb070, dir: [-4, 1.6, 2.5], rim: 0.6, exp: 1.0 },
+  { name: 'night', env: 0.06, sun: 0.25, sunCol: 0x8fa6ff, dir: [-2, 4, -3], rim: 1.4, exp: 1.2 },
+];
+let lightIdx = 0;
+
+// ---------------------------------------------------------------- state
+const state = { models: [], current: null, root: null, mixer: null, duration: 0, playing: true, speed: 1,
+                radius: 1, center: new THREE.Vector3(), wire: false, seeking: false };
+const clock = new THREE.Clock();
+const loader = new GLTFLoader();
+const draco = new DRACOLoader();
+draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/gltf/');
+loader.setDRACOLoader(draco);
+
+function resize() {
+  const r = stage.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / Math.max(r.height, 1);
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+
+function applyLight() {
+  const L = LIGHTS[lightIdx];
+  scene.environmentIntensity = L.env;
+  sun.intensity = L.sun;
+  sun.color.setHex(L.sunCol);
+  const r = state.radius;
+  sun.position.set(...L.dir).normalize().multiplyScalar(r * 4).add(state.center);
+  sun.target.position.copy(state.center);
+  rim.intensity = L.rim;
+  rim.position.set(-L.dir[0], 2, -L.dir[2]).normalize().multiplyScalar(r * 4).add(state.center);
+  renderer.toneMappingExposure = L.exp;
+  $('light-name').textContent = L.name;
+}
+
+function frameView() {
+  const r = state.radius, c = state.center, s = state.size || new THREE.Vector3(r, r, r);
+  // fit the box height to the vertical fov and its longest side to the horizontal fov
+  const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+  const th = tv * camera.aspect;
+  const depth = Math.min(s.x, s.z) / 2;
+  const dist = Math.max((s.y / 2) / tv, (Math.max(s.x, s.z) / 2) / th) * 1.35 + depth;
+  camera.position.copy(c).add(new THREE.Vector3(0.75, 0.38, 1.0).normalize().multiplyScalar(dist));
+  camera.near = dist / 100;
+  camera.far = dist * 50;
+  camera.updateProjectionMatrix();
+  controls.target.copy(c);
+  controls.minDistance = r * 0.25;
+  controls.maxDistance = r * 12;
+  controls.update();
+}
+
+// ---------------------------------------------------------------- loading
+function clearModel() {
+  if (state.mixer) state.mixer.stopAllAction();
+  if (state.root) {
+    scene.remove(state.root);
+    state.root.traverse((o) => {
+      if (o.isMesh) {
+        o.geometry.dispose();
+        (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.dispose());
+      }
+    });
+  }
+  state.root = state.mixer = state.follow = null;
+  state.duration = 0;
+}
+
+function showError(msg) {
+  $('error').textContent = msg;
+  $('error').hidden = false;
+}
+
+function load(url, meta, size) {
+  clearModel();
+  $('error').hidden = true;
+  $('loading').hidden = false;
+  $('bar').style.width = '0%';
+  $('load-txt').textContent = 'loading ' + (meta.name || '');
+  loader.load(url, (gltf) => {
+    const root = gltf.scene;
+    let tris = 0, meshes = 0;
+    const mats = new Set();
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      meshes++;
+      o.castShadow = true;
+      o.receiveShadow = true;
+      const g = o.geometry;
+      tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => mats.add(m));
+    });
+    // sit it on the floor, centred (precise: rotated parts would otherwise inflate the box)
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root, true);
+    const c = box.getCenter(new THREE.Vector3());
+    root.position.x -= c.x;
+    root.position.z -= c.z;
+    root.position.y -= box.min.y;
+    scene.add(root);
+    state.root = root;
+    root.updateMatrixWorld(true);
+    const b2 = new THREE.Box3().setFromObject(root, true);
+    const sph = b2.getBoundingSphere(new THREE.Sphere());
+    state.center.copy(sph.center);
+    state.radius = sph.radius;
+    state.size = b2.getSize(new THREE.Vector3());
+    shadowFloor.scale.setScalar(sph.radius * 3);
+    grid.scale.setScalar(sph.radius * 4);
+    const sc = sun.shadow.camera;
+    sc.left = sc.bottom = -sph.radius * 1.6;
+    sc.right = sc.top = sph.radius * 1.6;
+    sc.near = 0.01;
+    sc.far = sph.radius * 10;
+    sc.updateProjectionMatrix();
+    applyLight();
+    frameView();
+    setWire(state.wire);
+    // animations: every clip plays together on one timeline
+    if (gltf.animations.length) {
+      state.mixer = new THREE.AnimationMixer(root);
+      gltf.animations.forEach((clip) => state.mixer.clipAction(clip).play());
+      state.duration = Math.max(...gltf.animations.map((a) => a.duration));
+      // camera follows the height of the top-most moving node (jumps stay in frame)
+      const depth = (o) => { let d = 0; while (o && o !== root) { o = o.parent; d++; } return d; };
+      let best = null;
+      gltf.animations.forEach((a) => a.tracks.forEach((t) => {
+        if (!t.name.endsWith('.position')) return;
+        const n = root.getObjectByName(t.name.slice(0, -'.position'.length));
+        if (n && (!best || depth(n) < depth(best))) best = n;
+      }));
+      state.follow = best;
+      state.followY = best ? best.getWorldPosition(new THREE.Vector3()).y : 0;
+      $('transport').hidden = false;
+      setPlaying(true);
+    } else {
+      $('transport').hidden = true;
+    }
+    $('loading').hidden = true;
+    showInfo(meta, { tris, meshes, mats: mats.size, anims: gltf.animations.length, size });
+  }, (e) => {
+    if (e.total) $('bar').style.width = Math.round((e.loaded / e.total) * 100) + '%';
+  }, (err) => {
+    $('loading').hidden = true;
+    showError('could not load this model: ' + (err.message || err));
+  });
+}
+
+function fmtSize(b) {
+  if (!b) return '—';
+  return b > 1e6 ? (b / 1e6).toFixed(1) + ' MB' : Math.round(b / 1e3) + ' KB';
+}
+
+function showInfo(meta, s) {
+  $('m-name').textContent = meta.name || 'model';
+  $('m-desc').textContent = meta.description || '';
+  const rows = [
+    ['triangles', Math.round(s.tris).toLocaleString('en')],
+    ['parts', s.meshes],
+    ['materials', s.mats],
+    ['animation', state.duration ? state.duration.toFixed(1) + ' s' : 'none'],
+    ['file', fmtSize(s.size)],
+    ['made', meta.made || '—'],
+  ];
+  $('m-stats').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+}
+
+// ---------------------------------------------------------------- gallery
+function renderList() {
+  const ul = $('list');
+  ul.innerHTML = '';
+  state.models.forEach((m) => {
+    const li = document.createElement('li');
+    li.className = 'card' + (state.current === m ? ' active' : '');
+    li.innerHTML = (m.poster ? `<img src="${m.poster}" alt="">` : '<div class="ph"></div>') +
+      `<div><div class="t">${m.name}</div><div class="s">${m.tags ? m.tags.join(' · ') : ''}</div></div>`;
+    li.onclick = () => select(m);
+    ul.appendChild(li);
+  });
+  const n = state.models.filter((m) => !m.local).length;
+  $('count').textContent = n + (n === 1 ? ' model' : ' models');
+}
+
+async function select(m) {
+  state.current = m;
+  renderList();
+  if (!m.local) history.replaceState(null, '', '#' + m.id);
+  let size = m.bytes;
+  if (!size && !m.local) {
+    try {
+      const h = await fetch(m.file, { method: 'HEAD' });
+      size = +h.headers.get('content-length') || 0;
+    } catch { size = 0; }
+  }
+  load(m.url || m.file, m, size);
+}
+
+async function init() {
+  resize();
+  try {
+    const r = await fetch('models/models.json', { cache: 'no-cache' });
+    state.models = (await r.json()).models;
+  } catch {
+    state.models = [];
+  }
+  renderList();
+  const want = location.hash.slice(1);
+  const first = state.models.find((m) => m.id === want) || state.models[0];
+  if (first) select(first);
+  else { $('m-name').textContent = 'no models yet'; }
+  animate();
+}
+
+// ---------------------------------------------------------------- controls
+function setPlaying(p) {
+  state.playing = p;
+  $('play').textContent = p ? '❚❚' : '▶';
+}
+function setWire(w) {
+  state.wire = w;
+  $('t-wire').classList.toggle('on', w);
+  state.root?.traverse((o) => {
+    if (o.isMesh) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { m.wireframe = w; });
+  });
+}
+$('play').onclick = () => setPlaying(!state.playing);
+$('speed').onchange = (e) => { state.speed = +e.target.value; };
+$('scrub').addEventListener('input', (e) => {
+  if (!state.mixer) return;
+  state.mixer.setTime((e.target.value / 1000) * state.duration);
+});
+$('scrub').addEventListener('pointerdown', () => { state.seeking = true; });
+window.addEventListener('pointerup', () => { state.seeking = false; });
+$('t-rotate').onclick = () => {
+  controls.autoRotate = !controls.autoRotate;
+  $('t-rotate').classList.toggle('on', controls.autoRotate);
+};
+$('t-wire').onclick = () => setWire(!state.wire);
+$('t-light').onclick = () => { lightIdx = (lightIdx + 1) % LIGHTS.length; applyLight(); };
+$('t-grid').onclick = () => { grid.visible = !grid.visible; $('t-grid').classList.toggle('on', grid.visible); };
+$('t-reset').onclick = frameView;
+$('t-full').onclick = () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else stage.requestFullscreen?.();
+};
+$('t-shot').onclick = () => {
+  renderer.render(scene, camera);
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = (state.current?.id || 'model') + '.png';
+  a.click();
+};
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  const k = e.key.toLowerCase();
+  if (k === ' ') { e.preventDefault(); setPlaying(!state.playing); }
+  else if (k === 'a') $('t-rotate').click();
+  else if (k === 'w') $('t-wire').click();
+  else if (k === 'l') $('t-light').click();
+  else if (k === 'g') $('t-grid').click();
+  else if (k === 'r') frameView();
+  else if (k === 'f') $('t-full').click();
+});
+
+// drag & drop your own .glb (stays on your computer, nothing is uploaded)
+let dragDepth = 0;
+window.addEventListener('dragenter', (e) => { e.preventDefault(); dragDepth++; $('drop').hidden = false; });
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; $('drop').hidden = true; } });
+window.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragDepth = 0;
+  $('drop').hidden = true;
+  const f = [...e.dataTransfer.files].find((x) => /\.(glb|gltf)$/i.test(x.name));
+  if (!f) { showError('drop a .glb or .gltf file (export it from Blender: File → Export → glTF 2.0)'); return; }
+  const m = { id: 'local-' + f.name, name: f.name.replace(/\.(glb|gltf)$/i, ''), local: true,
+              url: URL.createObjectURL(f), bytes: f.size, tags: ['your file'],
+              description: 'opened from your computer — not uploaded anywhere' };
+  state.models.unshift(m);
+  select(m);
+});
+
+// ---------------------------------------------------------------- loop
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  if (state.mixer && state.playing && !state.seeking) {
+    state.mixer.update(dt * state.speed);
+  }
+  if (state.mixer && state.duration) {
+    const t = state.mixer.time % state.duration;
+    if (!state.seeking) $('scrub').value = Math.round((t / state.duration) * 1000);
+    $('time').textContent = `${t.toFixed(1)} / ${state.duration.toFixed(1)} s`;
+  }
+  if (state.follow) {
+    const y = state.follow.getWorldPosition(tmpV).y;
+    const d = (y - state.followY) * 0.85;
+    state.followY += d / 0.85;
+    camera.position.y += d;
+    controls.target.y += d;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+const tmpV = new THREE.Vector3();
+
+window.__viewer = { renderer, scene, camera, controls, state, applyLight, LIGHTS };   // debug handle
+init();

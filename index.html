@@ -1,45 +1,67 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
-<title>locked · how good are you, really</title>
-<meta name="description" content="A pile of tiny games that measure how dialed in you actually are.">
-<meta name="theme-color" content="#000000">
-<meta name="color-scheme" content="dark">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="locked">
-<meta property="og:title" content="locked · how good are you, really">
-<meta property="og:description" content="27 tiny games measuring your eyes, ears, hands and memory. No account, nothing saved off your device.">
-<meta property="og:type" content="website">
-<link rel="stylesheet" href="css/style.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23000'/><circle cx='50' cy='50' r='26' fill='none' stroke='%23fff' stroke-width='8'/><circle cx='50' cy='50' r='6' fill='%23fff'/></svg>">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>locked — 3d</title>
+  <meta name="description" content="3d models made in blender, viewable in the browser">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
-  <div id="shell">
-    <header id="top">
-      <a class="brand" href="#/" data-nav>locked</a>
-      <div class="crumbs" id="crumb"></div>
-      <div class="topright">
-        <button class="tbtn" id="btn-sound" title="Sound on/off">sound</button>
-        <button class="tbtn" id="btn-stats" title="Your record">record</button>
-        <button class="tbtn" id="btn-random" title="Random game">random</button>
+  <header class="top">
+    <div class="brand"><span class="logo">locked</span><span class="sub">3d</span></div>
+    <div class="top-right"><span id="count" class="muted"></span><span class="muted hint">drop a .glb anywhere to view it</span></div>
+  </header>
+
+  <main class="layout">
+    <section class="stage" id="stage">
+      <canvas id="view"></canvas>
+
+      <div class="tools">
+        <button class="tool" id="t-rotate" title="auto-rotate (A)">⟳</button>
+        <button class="tool" id="t-wire" title="wireframe (W)">▦</button>
+        <button class="tool" id="t-light" title="lighting (L)">☀</button>
+        <button class="tool" id="t-grid" title="floor grid (G)">#</button>
+        <button class="tool" id="t-reset" title="reset view (R)">⌖</button>
+        <button class="tool" id="t-shot" title="save screenshot">⇩</button>
+        <button class="tool" id="t-full" title="fullscreen (F)">⛶</button>
       </div>
-    </header>
+      <div class="light-name" id="light-name"></div>
 
-    <main id="view"></main>
+      <div class="transport" id="transport" hidden>
+        <button class="play" id="play" title="play / pause (space)">❚❚</button>
+        <input type="range" id="scrub" min="0" max="1000" value="0">
+        <span class="time" id="time">0.0 / 0.0 s</span>
+        <select id="speed" title="speed">
+          <option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option><option value="2">2×</option>
+        </select>
+      </div>
 
-    <footer id="dock"></footer>
-  </div>
+      <div class="loading" id="loading" hidden><div class="bar"><i id="bar"></i></div><span id="load-txt">loading</span></div>
+      <div class="drop" id="drop" hidden><span>drop to view</span></div>
+      <div class="error" id="error" hidden></div>
+    </section>
 
-  <div id="modal" class="modal" hidden>
-    <div class="modal-card">
-      <button class="modal-x" id="modal-x">esc</button>
-      <div id="modal-body"></div>
-    </div>
-  </div>
+    <aside class="side">
+      <div class="info" id="info">
+        <h1 id="m-name">—</h1>
+        <p id="m-desc" class="muted"></p>
+        <dl class="stats" id="m-stats"></dl>
+      </div>
+      <h2 class="label">models</h2>
+      <ul class="list" id="list"></ul>
+    </aside>
+  </main>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/viewer.js"></script>
 </body>
 </html>

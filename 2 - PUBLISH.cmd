@@ -1,5 +1,5 @@
 @echo off
-title Publish locked
+title Publish locked 3d
 setlocal
 cd /d "%~dp0"
 
@@ -17,7 +17,7 @@ if errorlevel 1 (
 
 echo Committing any changes...
 git add -A
-git diff --cached --quiet || git commit -m "update locked"
+git diff --cached --quiet || git commit -m "update models"
 
 git remote get-url origin >nul 2>nul
 if errorlevel 1 (
