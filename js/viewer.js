@@ -403,11 +403,12 @@ function animate() {
     $('time').textContent = `${t.toFixed(1)} / ${state.duration.toFixed(1)} s`;
   }
   if (state.follow) {
+    // damped: the camera glides after the model instead of copying every frame's motion
     const y = state.follow.getWorldPosition(tmpV).y;
-    const d = (y - state.followY) * 0.85;
-    state.followY += d / 0.85;
-    camera.position.y += d;
-    controls.target.y += d;
+    const d = (y - state.followY) * Math.min(1, dt * 4);
+    state.followY += d;
+    camera.position.y += d * 0.8;
+    controls.target.y += d * 0.8;
   }
   controls.update();
   renderer.render(scene, camera);
