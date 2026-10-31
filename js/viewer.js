@@ -6,7 +6,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
-import { applyWear } from './wear.js?v=1';
+import { applyWear } from './wear.js?v=3';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('view');

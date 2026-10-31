@@ -8,7 +8,8 @@ import * as THREE from 'three';
 const NOISE = /* glsl */ `
 varying vec3 vWearW;
 varying vec3 vWearO;
-uniform float wDirt, wLow, wHigh, wBump, wScale, wRv, wSeed, wSpace;
+uniform float wDirt, wLow, wHigh, wBump, wScale, wRv, wSeed, wSpace, wPeriod;
+float wearWeave = 0.5;   // fabric: 0 in the gaps between threads, 1 on a thread crown
 uniform vec3 wCol;
 float wHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float wNoise(vec3 x) {
@@ -31,8 +32,23 @@ export function applyWear(material, recipe) {
     wBump: { value: Math.min(recipe.bump || 0, 1.0) }, wScale: { value: Math.min(recipe.scale || 200, 420) },
     wRv: { value: recipe.rv ?? 0.06 }, wSeed: { value: recipe.seed || 0 }, wSpace: { value: space },
     wCol: { value: new THREE.Color().fromArray(recipe.col || [0.21, 0.165, 0.115]) },  // linear, like Blender
+    wPeriod: { value: recipe.period || 0.0024 },
   };
   const radial = recipe.space === 'RADIAL';
+  const fabric = recipe.kind === 'fabric';
+  // plain weave in the object's own plane (Blender X,Y -> three X,-Z); fades to the average colour once a
+  // thread gets smaller than a pixel, so it never shimmers
+  const WEAVE = fabric ? `
+        {
+          vec2 uv = vec2(vWearO.x, -vWearO.z) / wPeriod;
+          float aa = 1.0 - smoothstep(0.08, 0.28, length(fwidth(uv)));   // fade before moire can form
+          float warp = pow(0.5 + 0.5 * sin(6.2831853 * uv.x), 0.6);
+          float weft = pow(0.5 + 0.5 * sin(6.2831853 * uv.y), 0.6);
+          float chk = mod(floor(uv.x) + floor(uv.y), 2.0);
+          float fib = wNoise(vec3(chk > 0.5 ? vec2(uv.x * 0.05, uv.y * 3.0) : vec2(uv.x * 3.0, uv.y * 0.05), 1.0) * 6.0);
+          wearWeave = mix(0.55, mix(warp, weft, chk) * 0.8 + fib * 0.25, aa);
+          diffuseColor.rgb *= mix(0.35, 1.55, wearWeave);
+        }` : '';
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
@@ -50,7 +66,7 @@ export function applyWear(material, recipe) {
         float brk = smoothstep(0.35, 0.65, wFbm(p * 7.0));
         wearD = clamp(hm * brk * wDirt, 0.0, 1.0);
         diffuseColor.rgb = mix(diffuseColor.rgb, wCol, wearD);
-      }`)
+      }${WEAVE}`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
       roughnessFactor = clamp(roughnessFactor + wRv * (2.0 * wFbm(wearP() * 9.0) - 1.0), 0.02, 1.0);
       roughnessFactor = mix(roughnessFactor, 0.93, wearD);`)
@@ -63,7 +79,7 @@ export function applyWear(material, recipe) {
         float fade = 1.0 - smoothstep(0.35, 1.0, length(fwidth(q)));
         float amt = (wBump * 0.6 + wearD * 0.8) * fade;
         if (amt > 0.001) {
-          float h = (wFbm(q) - 0.5) * 0.0006 * amt;
+          float h = ${fabric ? 'wearWeave * 0.0005' : '(wFbm(q) - 0.5) * 0.0006 * amt'};
           vec2 dH = vec2(dFdx(h), dFdy(h));
           vec3 sp = -vViewPosition, sx = dFdx(sp), sy = dFdy(sp);
           vec3 r1 = cross(sy, normal), r2 = cross(normal, sx);
@@ -72,6 +88,6 @@ export function applyWear(material, recipe) {
         }
       }`);
   };
-  material.customProgramCacheKey = () => 'wear-' + (radial ? 'r' : space);
+  material.customProgramCacheKey = () => 'wear-' + (radial ? 'r' : space) + (fabric ? 'f' : '');
   material.needsUpdate = true;
 }
