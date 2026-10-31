@@ -188,13 +188,16 @@ function showError(msg) {
   $('error').hidden = false;
 }
 
+let loadToken = 0;
 function load(url, meta, size) {
+  const token = ++loadToken;
   clearModel();
   $('error').hidden = true;
   $('loading').hidden = false;
   $('bar').style.width = '0%';
   $('load-txt').textContent = 'loading ' + (meta.name || '');
-  loader.load(url, (gltf) => {
+  loader.load(url, async (gltf) => {
+    performance.mark('model-parsed');
     const root = gltf.scene;
     let tris = 0, meshes = 0;
     const mats = new Set();
@@ -211,7 +214,6 @@ function load(url, meta, size) {
         if (w) { try { applyWear(m, typeof w === 'string' ? JSON.parse(w) : w); } catch (e) { console.warn(e); } }
       });
     });
-    state.chain = setupChain(root);
     // sit it on the floor, centred (precise: rotated parts would otherwise inflate the box)
     root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(root, true);
@@ -219,7 +221,15 @@ function load(url, meta, size) {
     root.position.x -= c.x;
     root.position.z -= c.z;
     root.position.y -= box.min.y;
+    // compile every shader off the main thread (parallel compile) before the model goes in, so the page never
+    // freezes on the first frame; the spinner keeps turning meanwhile
+    $('load-txt').textContent = 'preparing ' + (meta.name || '');
+    try { await renderer.compileAsync(root, camera, scene); } catch (e) { console.warn(e); }
+    performance.mark('model-compiled');
+    if (token !== loadToken) return;               // another model was picked meanwhile
     scene.add(root);
+    state.chain = setupChain(root);
+    state.markFrame = true;
     state.root = root;
     root.updateMatrixWorld(true);
     const b2 = new THREE.Box3().setFromObject(root, true);
@@ -542,6 +552,7 @@ function animate() {
   }
   controls.update();
   renderer.render(scene, camera);
+  if (state.markFrame) { state.markFrame = false; performance.mark('model-first-frame'); }
 }
 const tmpV = new THREE.Vector3();
 
