@@ -5,7 +5,7 @@
       "name": "sur-ron light bee x",
       "file": "models/surron-light-bee-x.glb",
       "poster": "models/surron-light-bee-x.jpg",
-      "bytes": 3018968,
+      "bytes": 3057804,
       "turntable": { "dir": "models/surron-turntable/", "count": 72 },
       "env": {
         "background": "models/surron-trail-env.jpg",
