@@ -24,9 +24,56 @@ float wearD = 0.0;
 vec3 wearP() { return (wSpace > 0.5 ? vWearO : vWearW) + vec3(wSeed, wSeed * 1.7, wSeed * 0.3); }
 `;
 
+// one clock for every animated material (flames); the viewer advances it each frame
+export const wearTime = { value: 0 };
+
+// Flames (recipe.kind 'fire'): additive, unlit, double-sided. UV v runs base -> tip in Blender, which glTF flips, so
+// the height up a flame is 1 - vUv.y. Vertices sway more towards the tip; the colour runs white-yellow -> orange ->
+// deep red, and fbm noise scrolling upwards cuts the flame into licks (same recipe as the Blender material).
+function applyFire(material, recipe) {
+  material.userData.isFire = true;
+  material.transparent = true;
+  material.blending = THREE.AdditiveBlending;
+  material.depthWrite = false;
+  material.side = THREE.DoubleSide;
+  material.defines = { ...(material.defines || {}), USE_UV: '' };
+  const uniforms = { wTime: wearTime, wSeed: { value: recipe.seed || 0 } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed;\nvarying vec3 vWearO;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+      {
+        float fh = 1.0 - uv.y;
+        float sway = 0.006 * fh * fh;
+        transformed.x += sin(wTime * 7.0 + position.y * 60.0 + wSeed) * sway;
+        transformed.z += cos(wTime * 5.3 + position.y * 45.0 + wSeed * 2.0) * sway;
+        transformed.y += sin(wTime * 9.0 + position.x * 50.0) * 0.004 * fh;
+      }`)
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWearO = transformed;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed;\nvarying vec3 vWearO;\n' +
+        NOISE.replace('varying vec3 vWearW;', '').replace('varying vec3 vWearO;', '')
+          .replace('uniform float wDirt, wLow, wHigh, wBump, wScale, wRv, wSeed, wSpace, wPeriod, wCv, wBrush;', '')
+          .replace('uniform vec3 wCol;', '').replace(/vec3 wearP\(\)[^\n]*\n/, ''))
+      .replace('#include <opaque_fragment>', `
+      {
+        float fh = 1.0 - vUv.y;
+        float n = wFbm(vWearO * 35.0 + vec3(0.0, -wTime * 3.5, 0.0) + wSeed);
+        float inten = pow(1.0 - fh, 0.7) * smoothstep(0.32, 0.7, n + 0.4 * (1.0 - fh));
+        vec3 col = mix(mix(vec3(1.0, 0.85, 0.4), vec3(1.0, 0.42, 0.04), smoothstep(0.0, 0.4, fh)),
+                       vec3(0.55, 0.05, 0.01), smoothstep(0.4, 1.0, fh));
+        gl_FragColor = vec4(col * inten * 2.4, 1.0);
+      }`);
+  };
+  material.customProgramCacheKey = () => 'fire';
+  material.needsUpdate = true;
+}
+
 export function applyWear(material, recipe) {
   if (!recipe || material.userData.wearApplied) return;
   material.userData.wearApplied = true;
+  if (recipe.kind === 'fire') { applyFire(material, recipe); return; }
   const space = recipe.space === 'BIKE' ? 0 : 1;
   const uniforms = {
     wDirt: { value: recipe.dirt || 0 }, wLow: { value: recipe.low ?? 0.15 }, wHigh: { value: recipe.high ?? 0.55 },

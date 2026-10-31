@@ -6,7 +6,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
-import { applyWear } from './wear.js?v=4';
+import { applyWear, wearTime } from './wear.js?v=5';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('view');
@@ -212,6 +212,7 @@ function load(url, meta, size) {
         mats.add(m);
         const w = m.userData && m.userData.wear;      // Blender's procedural wear recipe
         if (w) { try { applyWear(m, typeof w === 'string' ? JSON.parse(w) : w); } catch (e) { console.warn(e); } }
+        if (m.userData.isFire) o.castShadow = o.receiveShadow = false;     // light, not matter
       });
     });
     // sit it on the floor, centred (precise: rotated parts would otherwise inflate the box)
@@ -529,6 +530,7 @@ let spinT = 0;
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
+  wearTime.value += dt;
   if (photo.on) {                       // the 3d scene is hidden; only the auto-spin runs
     if (controls.autoRotate && photo.drag === null && (spinT += dt) > 1 / 14) { spinT = 0; showFrame(photo.idx - 1); }
     return;
