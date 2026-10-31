@@ -70,10 +70,37 @@ function applyFire(material, recipe) {
   material.needsUpdate = true;
 }
 
+// Ground glow (recipe.kind 'glow'): an additive pool of light fading to a rounded-rectangle edge across the UV square,
+// breathing slowly - the neon underglow under the car.
+function applyGlow(material, recipe) {
+  material.userData.isFire = true;              // same handling as flames: light, no shadows
+  material.transparent = true;
+  material.blending = THREE.AdditiveBlending;
+  material.depthWrite = false;
+  material.side = THREE.DoubleSide;
+  material.defines = { ...(material.defines || {}), USE_UV: '' };
+  const uniforms = { wTime: wearTime, gCol: { value: new THREE.Color().fromArray(recipe.col || [0.25, 1, 0.12]) } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime;\nuniform vec3 gCol;')
+      .replace('#include <opaque_fragment>', `
+      {
+        vec2 q = abs(vUv - 0.5) * 2.0;
+        float d = max(q.x, q.y);
+        float fall = pow(clamp((1.0 - d) / 0.65, 0.0, 1.0), 2.5);
+        gl_FragColor = vec4(gCol * fall * (0.55 + 0.1 * sin(wTime * 2.2)), 1.0);
+      }`);
+  };
+  material.customProgramCacheKey = () => 'glow';
+  material.needsUpdate = true;
+}
+
 export function applyWear(material, recipe) {
   if (!recipe || material.userData.wearApplied) return;
   material.userData.wearApplied = true;
   if (recipe.kind === 'fire') { applyFire(material, recipe); return; }
+  if (recipe.kind === 'glow') { applyGlow(material, recipe); return; }
   const space = recipe.space === 'BIKE' ? 0 : 1;
   const uniforms = {
     wDirt: { value: recipe.dirt || 0 }, wLow: { value: recipe.low ?? 0.15 }, wHigh: { value: recipe.high ?? 0.55 },
