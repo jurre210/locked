@@ -5,21 +5,31 @@
       "name": "sur-ron light bee x",
       "file": "models/surron-light-bee-x.glb",
       "poster": "models/surron-light-bee-x.jpg",
-      "bytes": 3057804,
-      "turntable": { "dir": "models/surron-turntable/", "count": 72 },
+      "bytes": 3058648,
+      "turntable": {
+        "dir": "models/surron-turntable/",
+        "count": 72
+      },
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
         "height": 1.6,
         "radius": 60,
-        "sun": [-0.516, 0.436, 0.737],
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
         "sunIntensity": 3.4,
         "envIntensity": 0.7,
         "exposure": 0.72,
         "shadow": 0.65
       },
       "made": "2026-10-30",
-      "tags": ["electric dirt bike", "animated"],
+      "tags": [
+        "electric dirt bike",
+        "animated"
+      ],
       "description": "Electric dirt bike built from scratch in Blender. 19\" spoked wheels with knobby tyres, upside-down forks, coil-over shock, a 130-link chain driven by the rear wheel. Press play for the ride: launch, suspension over the whoops, lean through the bends and the jump, played in place."
     },
     {
@@ -27,21 +37,145 @@
       "name": "sur-ron light bee x · orange",
       "file": "models/surron-light-bee-x-orange.glb",
       "poster": "models/surron-light-bee-x-orange.png",
-      "bytes": 3071540,
+      "bytes": 3072548,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
         "height": 1.6,
         "radius": 60,
-        "sun": [-0.516, 0.436, 0.737],
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
         "sunIntensity": 3.4,
         "envIntensity": 0.7,
         "exposure": 0.72,
         "shadow": 0.65
       },
       "made": "2026-10-31",
-      "tags": ["electric dirt bike", "orange edition", "animated"],
+      "tags": [
+        "electric dirt bike",
+        "orange edition",
+        "animated"
+      ],
       "description": "The same Light Bee X in the black and orange graphics kit: printed orange, white and grey graphics on the side covers, rear covers and head stock, a round LED headlight on fork brackets, a shorter seat with a slim upswept tail fender and the open space under it, a bronze shock spring and a gold chain. Same ride animation."
+    },
+    {
+      "id": "surron-light-bee-x-blue",
+      "name": "sur-ron light bee x · blue",
+      "file": "models/surron-light-bee-x-blue.glb",
+      "poster": "models/surron-light-bee-x-blue.png",
+      "bytes": 3068704,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "blue kit",
+        "animated"
+      ],
+      "description": "Light Bee X in a royal-blue graphics kit: blue, black and white graphics on the side covers, rear covers and head stock, a gloss blue tank cover and front fender, the long MX tail and the LED number-plate headlight. Same ride animation."
+    },
+    {
+      "id": "surron-light-bee-x-camo",
+      "name": "sur-ron light bee x · blue camo",
+      "file": "models/surron-light-bee-x-camo.glb",
+      "poster": "models/surron-light-bee-x-camo.png",
+      "bytes": 3195904,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "camo kit",
+        "animated"
+      ],
+      "description": "Light Bee X wrapped in printed blue camo: side covers, rear covers, tank cover, both fenders and new fork guards. Round LED headlight, gold chain, white shock spring, gold fork stanchions. Same ride animation."
+    },
+    {
+      "id": "surron-light-bee-x-stealth",
+      "name": "sur-ron light bee x · stealth",
+      "file": "models/surron-light-bee-x-stealth.glb",
+      "poster": "models/surron-light-bee-x-stealth.png",
+      "bytes": 3074424,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "street tail",
+        "animated"
+      ],
+      "description": "The stock black Light Bee X with small orange flashes on the covers and frame, short seat, round LED headlight and a street tail tidy: plate holder, reflector and indicators. Same ride animation."
+    },
+    {
+      "id": "surron-light-bee-x-supermoto",
+      "name": "sur-ron light bee x · supermoto",
+      "file": "models/surron-light-bee-x-supermoto.glb",
+      "poster": "models/surron-light-bee-x-supermoto.png",
+      "bytes": 3235088,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric supermoto",
+        "road tyres",
+        "animated"
+      ],
+      "description": "Supermoto build: champagne frame and swingarm, side covers off to show the brushed aluminium battery with an orange band, gold rims on road tyres, red fork guards and grips, short tail. Same ride animation."
     }
   ]
 }

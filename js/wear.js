@@ -8,7 +8,8 @@ import * as THREE from 'three';
 const NOISE = /* glsl */ `
 varying vec3 vWearW;
 varying vec3 vWearO;
-uniform float wDirt, wLow, wHigh, wBump, wScale, wRv, wSeed, wSpace, wPeriod;
+uniform float wDirt, wLow, wHigh, wBump, wScale, wRv, wSeed, wSpace, wPeriod, wCv, wBrush;
+float wearS = 0.0;       // brushing streak, -0.5..0.5 (0 where it would be finer than a pixel)
 float wearWeave = 0.5;   // fabric: 0 in the gaps between threads, 1 on a thread crown
 uniform vec3 wCol;
 float wHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -33,6 +34,7 @@ export function applyWear(material, recipe) {
     wRv: { value: recipe.rv ?? 0.06 }, wSeed: { value: recipe.seed || 0 }, wSpace: { value: space },
     wCol: { value: new THREE.Color().fromArray(recipe.col || [0.21, 0.165, 0.115]) },  // linear, like Blender
     wPeriod: { value: recipe.period || 0.0024 },
+    wCv: { value: recipe.cv ?? 0.0 }, wBrush: { value: recipe.brush || 0 },
   };
   const radial = recipe.space === 'RADIAL';
   const fabric = recipe.kind === 'fabric';
@@ -63,12 +65,21 @@ export function applyWear(material, recipe) {
         float hm = ${radial
           ? 'smoothstep(wLow, wHigh, length(vWearO.xy))'
           : 'smoothstep(wHigh, wLow, wSpace > 0.5 ? vWearO.y : vWearW.y)'};
+        // tone variation: soft blotches a few cm across (Blender: noise scale 4 -> mottling)
+        diffuseColor.rgb *= 1.0 + wCv * (2.0 * smoothstep(0.3, 0.7, wFbm(p * 4.0)) - 1.0);
+        // brushing: streaks along the part's X (or rings round a wheel's axis), faded before they alias
+        if (wBrush > 0.0) {
+          vec3 bq = ${radial ? 'vec3(length(vWearO.xy) * 450.0, 0.0, 0.0)' : 'vec3(vWearO.x * 3.0, vWearO.y * 450.0, vWearO.z * 450.0)'};
+          float bf = 1.0 - smoothstep(0.3, 0.9, length(fwidth(bq)) / 3.0);
+          wearS = (wNoise(bq + wSeed) - 0.5) * bf;
+          diffuseColor.rgb *= 1.0 + wBrush * 1.2 * wearS;
+        }
         float brk = smoothstep(0.35, 0.65, wFbm(p * 7.0));
         wearD = clamp(hm * brk * wDirt, 0.0, 1.0);
         diffuseColor.rgb = mix(diffuseColor.rgb, wCol, wearD);
       }${WEAVE}`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-      roughnessFactor = clamp(roughnessFactor + wRv * (2.0 * wFbm(wearP() * 9.0) - 1.0), 0.02, 1.0);
+      roughnessFactor = clamp(roughnessFactor + wRv * (2.0 * wFbm(wearP() * 9.0) - 1.0) + wBrush * 2.0 * wearS, 0.02, 1.0);
       roughnessFactor = mix(roughnessFactor, 0.93, wearD);`)
       .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
       metalnessFactor = mix(metalnessFactor, 0.0, wearD);`)
