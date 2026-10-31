@@ -332,6 +332,36 @@
         "short tail"
       ],
       "description": "One of my own: clear-coated carbon-weave covers, tank, fenders and fork guards with a red slash and pinstripes, gunmetal frame, red rims, red spring and grips, short tail and round LED headlight."
+    },
+    {
+      "id": "surron-light-bee-x-hollow",
+      "name": "sur-ron light bee x · hollow",
+      "file": "models/surron-light-bee-x-hollow.glb",
+      "poster": "models/surron-light-bee-x-hollow.jpg",
+      "bytes": 1247356,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "spooky",
+        "animated"
+      ],
+      "description": "Headless-horseman build: a carved jack-o'-lantern glowing on the fork brackets as the headlight, another riding the tail, a tattered black shroud over the back of the seat, bone thorns along the front fender and a cobweb with a spider in each side of the frame. Printed moonlit-night kit with bats, bare branches and pumpkins; orange rims and spring, black chain."
     }
   ]
 }
