@@ -5,7 +5,7 @@
       "name": "sur-ron light bee x",
       "file": "models/surron-light-bee-x.glb",
       "poster": "models/surron-light-bee-x.jpg",
-      "bytes": 1003244,
+      "bytes": 1003292,
       "turntable": {
         "dir": "models/surron-turntable/",
         "count": 72
@@ -38,7 +38,7 @@
       "name": "sur-ron light bee x · orange",
       "file": "models/surron-light-bee-x-orange.glb",
       "poster": "models/surron-light-bee-x-orange.jpg",
-      "bytes": 1307552,
+      "bytes": 1305248,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -68,7 +68,7 @@
       "name": "sur-ron light bee x · blue",
       "file": "models/surron-light-bee-x-blue.glb",
       "poster": "models/surron-light-bee-x-blue.jpg",
-      "bytes": 1316340,
+      "bytes": 1314056,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -98,7 +98,7 @@
       "name": "sur-ron light bee x · blue camo",
       "file": "models/surron-light-bee-x-camo.glb",
       "poster": "models/surron-light-bee-x-camo.jpg",
-      "bytes": 1140480,
+      "bytes": 1140500,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -128,7 +128,7 @@
       "name": "sur-ron light bee x · stealth",
       "file": "models/surron-light-bee-x-stealth.glb",
       "poster": "models/surron-light-bee-x-stealth.jpg",
-      "bytes": 1147020,
+      "bytes": 1144752,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -158,7 +158,7 @@
       "name": "sur-ron light bee x · supermoto",
       "file": "models/surron-light-bee-x-supermoto.glb",
       "poster": "models/surron-light-bee-x-supermoto.jpg",
-      "bytes": 1179664,
+      "bytes": 1179576,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -188,7 +188,7 @@
       "name": "sur-ron light bee x · ember",
       "file": "models/surron-light-bee-x-ember.glb",
       "poster": "models/surron-light-bee-x-ember.jpg",
-      "bytes": 1245100,
+      "bytes": 1242888,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -218,7 +218,7 @@
       "name": "sur-ron light bee x · glacier",
       "file": "models/surron-light-bee-x-glacier.glb",
       "poster": "models/surron-light-bee-x-glacier.jpg",
-      "bytes": 1222428,
+      "bytes": 1220168,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -248,7 +248,7 @@
       "name": "sur-ron light bee x · venom",
       "file": "models/surron-light-bee-x-venom.glb",
       "poster": "models/surron-light-bee-x-venom.jpg",
-      "bytes": 1361692,
+      "bytes": 1359360,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -278,7 +278,7 @@
       "name": "sur-ron light bee x · royale",
       "file": "models/surron-light-bee-x-royale.glb",
       "poster": "models/surron-light-bee-x-royale.jpg",
-      "bytes": 1195176,
+      "bytes": 1192924,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -308,7 +308,7 @@
       "name": "sur-ron light bee x · carbon",
       "file": "models/surron-light-bee-x-carbon.glb",
       "poster": "models/surron-light-bee-x-carbon.jpg",
-      "bytes": 1435528,
+      "bytes": 1433304,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
