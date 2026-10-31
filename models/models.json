@@ -5,7 +5,7 @@
       "name": "sur-ron light bee x",
       "file": "models/surron-light-bee-x.glb",
       "poster": "models/surron-light-bee-x.jpg",
-      "bytes": 1003260,
+      "bytes": 1003244,
       "turntable": {
         "dir": "models/surron-turntable/",
         "count": 72
@@ -38,7 +38,7 @@
       "name": "sur-ron light bee x · orange",
       "file": "models/surron-light-bee-x-orange.glb",
       "poster": "models/surron-light-bee-x-orange.jpg",
-      "bytes": 1017156,
+      "bytes": 1307552,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -61,14 +61,14 @@
         "orange edition",
         "animated"
       ],
-      "description": "The same Light Bee X in the black and orange graphics kit: printed orange, white and grey graphics on the side covers, rear covers and head stock, a round LED headlight on fork brackets, a shorter seat with a slim upswept tail fender and the open space under it, a bronze shock spring and a gold chain. Same ride animation."
+      "description": "The same Light Bee X in the black and orange graphics kit: printed orange kit with halftone fades, white blades and pinstripes on the side covers, rear covers and head stock, a round LED headlight on fork brackets, a shorter seat with a slim upswept tail fender and the open space under it, a bronze shock spring and a gold chain. Same ride animation."
     },
     {
       "id": "surron-light-bee-x-blue",
       "name": "sur-ron light bee x · blue",
       "file": "models/surron-light-bee-x-blue.glb",
       "poster": "models/surron-light-bee-x-blue.jpg",
-      "bytes": 1013316,
+      "bytes": 1316340,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -91,14 +91,14 @@
         "blue kit",
         "animated"
       ],
-      "description": "Light Bee X in a royal-blue graphics kit: blue, black and white graphics on the side covers, rear covers and head stock, a gloss blue tank cover and front fender, the long MX tail and the LED number-plate headlight. Same ride animation."
+      "description": "Light Bee X in a royal-blue graphics kit: printed blue kit with halftone fades, white blades and pinstripes on the side covers, rear covers and head stock, a gloss blue tank cover and front fender, the long MX tail and the LED number-plate headlight. Same ride animation."
     },
     {
       "id": "surron-light-bee-x-camo",
       "name": "sur-ron light bee x · blue camo",
       "file": "models/surron-light-bee-x-camo.glb",
       "poster": "models/surron-light-bee-x-camo.jpg",
-      "bytes": 1140496,
+      "bytes": 1140480,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -128,7 +128,7 @@
       "name": "sur-ron light bee x · stealth",
       "file": "models/surron-light-bee-x-stealth.glb",
       "poster": "models/surron-light-bee-x-stealth.jpg",
-      "bytes": 1019032,
+      "bytes": 1147020,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -158,7 +158,7 @@
       "name": "sur-ron light bee x · supermoto",
       "file": "models/surron-light-bee-x-supermoto.glb",
       "poster": "models/surron-light-bee-x-supermoto.jpg",
-      "bytes": 1179676,
+      "bytes": 1179664,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -182,6 +182,156 @@
         "animated"
       ],
       "description": "Supermoto build: champagne frame and swingarm, side covers off to show the brushed aluminium battery with an orange band, gold rims on road tyres, red fork guards and grips, short tail. Same ride animation."
+    },
+    {
+      "id": "surron-light-bee-x-ember",
+      "name": "sur-ron light bee x · ember",
+      "file": "models/surron-light-bee-x-ember.glb",
+      "poster": "models/surron-light-bee-x-ember.jpg",
+      "bytes": 1245100,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "flame kit",
+        "animated"
+      ],
+      "description": "One of my own: black bike licked by a printed flame kit, yellow to orange to red over halftone smoke, on the side covers, rear covers and number plate. Orange anodised rims, yellow shock spring, gloss black plastics."
+    },
+    {
+      "id": "surron-light-bee-x-glacier",
+      "name": "sur-ron light bee x · glacier",
+      "file": "models/surron-light-bee-x-glacier.glb",
+      "poster": "models/surron-light-bee-x-glacier.jpg",
+      "bytes": 1222428,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "white kit",
+        "animated"
+      ],
+      "description": "One of my own: white plastics and a pearl-white frame, with a navy and ice-blue swoosh kit and halftone fades. Silver rims, blue shock spring, blue fork guards and grips, round LED headlight."
+    },
+    {
+      "id": "surron-light-bee-x-venom",
+      "name": "sur-ron light bee x · venom",
+      "file": "models/surron-light-bee-x-venom.glb",
+      "poster": "models/surron-light-bee-x-venom.jpg",
+      "bytes": 1361692,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "neon kit",
+        "short tail"
+      ],
+      "description": "One of my own: black hexagon kit with neon-green glowing slash lines. Green anodised rims, green spring and grips, black oxide chain, short upswept tail and round LED headlight."
+    },
+    {
+      "id": "surron-light-bee-x-royale",
+      "name": "sur-ron light bee x · royale",
+      "file": "models/surron-light-bee-x-royale.glb",
+      "poster": "models/surron-light-bee-x-royale.jpg",
+      "bytes": 1195176,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "purple & gold",
+        "animated"
+      ],
+      "description": "One of my own: deep purple frame and gloss purple plastics, a gold chevron kit over a fine diamond pattern, gold rims, gold chain and a gold shock spring."
+    },
+    {
+      "id": "surron-light-bee-x-carbon",
+      "name": "sur-ron light bee x · carbon",
+      "file": "models/surron-light-bee-x-carbon.glb",
+      "poster": "models/surron-light-bee-x-carbon.jpg",
+      "bytes": 1435528,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-10-31",
+      "tags": [
+        "electric dirt bike",
+        "carbon fibre",
+        "short tail"
+      ],
+      "description": "One of my own: clear-coated carbon-weave covers, tank, fenders and fork guards with a red slash and pinstripes, gunmetal frame, red rims, red spring and grips, short tail and round LED headlight."
     }
   ]
 }
