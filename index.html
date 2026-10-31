@@ -6,6 +6,9 @@
   <title>locked — 3d</title>
   <meta name="description" content="3d models made in blender, viewable in the browser">
   <link rel="stylesheet" href="css/style.css?v=4">
+  <!-- start the CDN connection and the big three.js module before viewer.js asks for them -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js">
   <script type="importmap">
   {
     "imports": {
@@ -70,6 +73,6 @@
   </main>
 
   <!-- bump ?v= on every viewer change: Pages lets browsers cache files for 10 minutes -->
-  <script type="module" src="js/viewer.js?v=8"></script>
+  <script type="module" src="js/viewer.js?v=9"></script>
 </body>
 </html>

@@ -66,10 +66,16 @@ async function loadEnv(spec) {
   if (!spec) { env.data = null; applyLight(); return; }
   let e = env.cache.get(spec.background);
   if (!e) {
-    const [bg, hdr] = await Promise.all([texLoader.loadAsync(spec.background), hdrLoader.loadAsync(spec.hdr)]);
-    bg.mapping = THREE.EquirectangularReflectionMapping;
-    bg.colorSpace = THREE.SRGBColorSpace;
-    bg.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    const prep = (bg) => {
+      bg.mapping = THREE.EquirectangularReflectionMapping;
+      bg.colorSpace = THREE.SRGBColorSpace;
+      bg.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return bg;
+    };
+    // a small preview panorama goes up first; the full-resolution one replaces it when it arrives
+    const full = texLoader.loadAsync(spec.background).then(prep);
+    const [bg, hdr] = await Promise.all([spec.preview ? texLoader.loadAsync(spec.preview).then(prep) : full,
+                                         hdrLoader.loadAsync(spec.hdr)]);
     hdr.mapping = THREE.EquirectangularReflectionMapping;
     const sky = new GroundedSkybox(bg, spec.height, spec.radius, 160);
     sky.position.y = spec.height - 0.01;
@@ -77,6 +83,10 @@ async function loadEnv(spec) {
     e = { spec, sky, pmrem: pmrem.fromEquirectangular(hdr).texture };
     hdr.dispose();
     env.cache.set(spec.background, e);
+    if (spec.preview) {
+      full.then((tex) => { sky.material.map = tex; sky.material.needsUpdate = true; bg.dispose(); })
+        .catch((err) => console.warn('full panorama failed', err));
+    }
   }
   env.data = e;
   applyLight();
@@ -90,6 +100,7 @@ const loader = new GLTFLoader();
 const draco = new DRACOLoader();
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/gltf/');
 loader.setDRACOLoader(draco);
+draco.preload();                       // fetch + compile the decoder while the model downloads
 
 function resize() {
   const r = stage.getBoundingClientRect();
@@ -168,7 +179,7 @@ function clearModel() {
       }
     });
   }
-  state.root = state.mixer = state.follow = null;
+  state.root = state.mixer = state.follow = state.chain = null;
   state.duration = 0;
 }
 
@@ -200,6 +211,7 @@ function load(url, meta, size) {
         if (w) { try { applyWear(m, typeof w === 'string' ? JSON.parse(w) : w); } catch (e) { console.warn(e); } }
       });
     });
+    state.chain = setupChain(root);
     // sit it on the floor, centred (precise: rotated parts would otherwise inflate the box)
     root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(root, true);
@@ -282,7 +294,7 @@ function renderList() {
   state.models.forEach((m) => {
     const li = document.createElement('li');
     li.className = 'card' + (state.current === m ? ' active' : '');
-    li.innerHTML = (m.poster ? `<img src="${m.poster}" alt="">` : '<div class="ph"></div>') +
+    li.innerHTML = (m.poster ? `<img src="${m.poster}" alt="" loading="lazy" decoding="async">` : '<div class="ph"></div>') +
       `<div><div class="t">${m.name}</div><div class="s">${m.tags ? m.tags.join(' · ') : ''}</div></div>`;
     li.onclick = () => select(m);
     ul.appendChild(li);
@@ -303,9 +315,8 @@ async function select(m) {
     } catch { size = 0; }
   }
   setupPhoto(m);
-  $('loading').hidden = false;
-  $('load-txt').textContent = 'loading surroundings';
-  try { await loadEnv(m.env); } catch (err) { console.warn('environment failed', err); await loadEnv(null); }
+  // model and surroundings download side by side; the model shows as soon as it is ready
+  loadEnv(m.env).catch((err) => { console.warn('environment failed', err); return loadEnv(null); });
   // ?v=<size> so a re-exported model is never served from a stale browser cache
   load(m.url || (m.file + (m.bytes ? '?v=' + m.bytes : '')), m, size);
 }
@@ -458,6 +469,51 @@ window.addEventListener('drop', (e) => {
   select(m);
 });
 
+// ---------------------------------------------------------------- chain
+// The export leaves the chain links standing still and ships their path (swingarm space, as the links' own
+// local coordinates) plus the chain's advance per frame; each link sits at its share of the loop, turned along
+// the chord to the next link. Same maths as the export, ~2 MB less to download than baked keyframes.
+function setupChain(root) {
+  let host = null;
+  root.traverse((o) => { if (!host && o.userData && o.userData.chain_web) host = o; });
+  if (!host) return null;
+  const raw = host.userData.chain_web;
+  const d = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  const P = [];
+  for (let i = 0; i < d.pts.length; i += 3) P.push(new THREE.Vector3(d.pts[i], d.pts[i + 1], d.pts[i + 2]));
+  const cum = [0];
+  for (let i = 0; i < P.length; i++) cum.push(cum[i] + P[i].distanceTo(P[(i + 1) % P.length]));
+  const links = [];
+  for (let i = 0; i < d.n; i++) links.push(host.getObjectByName('ChainLink_' + String(i).padStart(3, '0')));
+  if (links.some((l) => !l)) return null;
+  return { d, P, cum, total: cum[cum.length - 1], links };
+}
+const chainA = new THREE.Vector3(), chainB = new THREE.Vector3(), Z_AXIS = new THREE.Vector3(0, 0, 1);
+function chainAt(C, s, out) {
+  s = ((s % C.total) + C.total) % C.total;
+  let lo = 0, hi = C.P.length;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (C.cum[mid] <= s) lo = mid; else hi = mid; }
+  const a = C.P[lo], b = C.P[(lo + 1) % C.P.length];
+  return out.lerpVectors(a, b, (s - C.cum[lo]) / Math.max(C.cum[lo + 1] - C.cum[lo], 1e-9));
+}
+function updateChain(t) {
+  const C = state.chain;
+  if (!C) return;
+  const offs = C.d.offs, last = offs.length - 1;
+  const f = Math.min(Math.max(t * C.d.fps - C.d.start, 0), last);
+  const k = Math.floor(f), w = f - k;
+  const off = offs[k] * (1 - w) + offs[Math.min(k + 1, last)] * w;
+  const n = C.links.length, step = C.total / n;
+  for (let i = 0; i < n; i++) {
+    const s = ((((i / n + off) % 1) + 1) % 1) * C.total;
+    chainAt(C, s, chainA);
+    chainAt(C, s + step, chainB);
+    const L = C.links[i];
+    L.position.copy(chainA);
+    L.quaternion.setFromAxisAngle(Z_AXIS, Math.atan2(chainB.y - chainA.y, chainB.x - chainA.x));
+  }
+}
+
 // ---------------------------------------------------------------- loop
 let spinT = 0;
 function animate() {
@@ -472,6 +528,7 @@ function animate() {
   }
   if (state.mixer && state.duration) {
     const t = state.mixer.time % state.duration;
+    updateChain(t);
     if (!state.seeking) $('scrub').value = Math.round((t / state.duration) * 1000);
     $('time').textContent = `${t.toFixed(1)} / ${state.duration.toFixed(1)} s`;
   }
@@ -488,5 +545,5 @@ function animate() {
 }
 const tmpV = new THREE.Vector3();
 
-window.__viewer = { renderer, scene, camera, controls, state, applyLight, LIGHTS };   // debug handle
+window.__viewer = { renderer, scene, camera, controls, state, applyLight, LIGHTS, updateChain };   // debug handle
 init();

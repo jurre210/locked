@@ -5,7 +5,7 @@
       "name": "sur-ron light bee x",
       "file": "models/surron-light-bee-x.glb",
       "poster": "models/surron-light-bee-x.jpg",
-      "bytes": 3058648,
+      "bytes": 1003260,
       "turntable": {
         "dir": "models/surron-turntable/",
         "count": 72
@@ -23,7 +23,8 @@
         "sunIntensity": 3.4,
         "envIntensity": 0.7,
         "exposure": 0.72,
-        "shadow": 0.65
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
       },
       "made": "2026-10-30",
       "tags": [
@@ -36,8 +37,8 @@
       "id": "surron-light-bee-x-orange",
       "name": "sur-ron light bee x · orange",
       "file": "models/surron-light-bee-x-orange.glb",
-      "poster": "models/surron-light-bee-x-orange.png",
-      "bytes": 3072548,
+      "poster": "models/surron-light-bee-x-orange.jpg",
+      "bytes": 1017156,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -51,7 +52,8 @@
         "sunIntensity": 3.4,
         "envIntensity": 0.7,
         "exposure": 0.72,
-        "shadow": 0.65
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
       },
       "made": "2026-10-31",
       "tags": [
@@ -65,8 +67,8 @@
       "id": "surron-light-bee-x-blue",
       "name": "sur-ron light bee x · blue",
       "file": "models/surron-light-bee-x-blue.glb",
-      "poster": "models/surron-light-bee-x-blue.png",
-      "bytes": 3068704,
+      "poster": "models/surron-light-bee-x-blue.jpg",
+      "bytes": 1013316,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -80,7 +82,8 @@
         "sunIntensity": 3.4,
         "envIntensity": 0.7,
         "exposure": 0.72,
-        "shadow": 0.65
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
       },
       "made": "2026-10-31",
       "tags": [
@@ -94,8 +97,8 @@
       "id": "surron-light-bee-x-camo",
       "name": "sur-ron light bee x · blue camo",
       "file": "models/surron-light-bee-x-camo.glb",
-      "poster": "models/surron-light-bee-x-camo.png",
-      "bytes": 3195904,
+      "poster": "models/surron-light-bee-x-camo.jpg",
+      "bytes": 1140496,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -109,7 +112,8 @@
         "sunIntensity": 3.4,
         "envIntensity": 0.7,
         "exposure": 0.72,
-        "shadow": 0.65
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
       },
       "made": "2026-10-31",
       "tags": [
@@ -123,8 +127,8 @@
       "id": "surron-light-bee-x-stealth",
       "name": "sur-ron light bee x · stealth",
       "file": "models/surron-light-bee-x-stealth.glb",
-      "poster": "models/surron-light-bee-x-stealth.png",
-      "bytes": 3074424,
+      "poster": "models/surron-light-bee-x-stealth.jpg",
+      "bytes": 1019032,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -138,7 +142,8 @@
         "sunIntensity": 3.4,
         "envIntensity": 0.7,
         "exposure": 0.72,
-        "shadow": 0.65
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
       },
       "made": "2026-10-31",
       "tags": [
@@ -152,8 +157,8 @@
       "id": "surron-light-bee-x-supermoto",
       "name": "sur-ron light bee x · supermoto",
       "file": "models/surron-light-bee-x-supermoto.glb",
-      "poster": "models/surron-light-bee-x-supermoto.png",
-      "bytes": 3235088,
+      "poster": "models/surron-light-bee-x-supermoto.jpg",
+      "bytes": 1179676,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -167,7 +172,8 @@
         "sunIntensity": 3.4,
         "envIntensity": 0.7,
         "exposure": 0.72,
-        "shadow": 0.65
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
       },
       "made": "2026-10-31",
       "tags": [
