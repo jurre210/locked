@@ -96,11 +96,91 @@ function applyGlow(material, recipe) {
   material.needsUpdate = true;
 }
 
+// Living goo (recipe.kind 'ooze'): lit as usual, but the surface breathes (a slow ripple along the normal) and a
+// silver rim light runs round every silhouette, so liquid black never reads as a flat hole.
+function applyOoze(material, recipe) {
+  const uniforms = { wTime: wearTime, wSeed: { value: recipe.seed || 0 } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+      transformed += objectNormal * 0.0016 * sin(wTime * 2.6 + position.x * 40.0 + position.z * 31.0 + wSeed)
+                   * (0.6 + 0.4 * sin(wTime * 0.7 + position.y * 23.0));`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      {
+        float rim = pow(1.0 - abs(dot(normal, normalize(vViewPosition))), 3.0);
+        totalEmissiveRadiance += vec3(0.78, 0.8, 0.88) * rim * (0.45 + 0.15 * sin(wTime * 1.8 + wSeed));
+      }`);
+  };
+  material.customProgramCacheKey = () => 'ooze';
+  material.needsUpdate = true;
+}
+
+// White veins / infalling streaks (recipe.kind 'pulse'): lit white, plus waves of light running along them.
+function applyPulse(material, recipe) {
+  const uniforms = { wTime: wearTime, wSeed: { value: recipe.seed || 0 } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWearW;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWearW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed;\nvarying vec3 vWearW;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      {
+        float w = 0.5 + 0.5 * sin(wTime * 2.4 - (vWearW.x * 9.0 + vWearW.y * 6.0) + wSeed);
+        totalEmissiveRadiance += vec3(0.9, 0.95, 1.0) * (0.15 + 1.1 * pow(w, 6.0));
+      }`);
+  };
+  material.customProgramCacheKey = () => 'pulse';
+  material.needsUpdate = true;
+}
+
+// Accretion disc (recipe.kind 'disc'): additive light over an annulus whose UVs run u round it, v inner -> outer.
+// White-hot at the inner edge, fading out; spiral arms wind in, the inner orbit turning fastest.
+function applyDisc(material, recipe) {
+  material.userData.isFire = true;
+  material.transparent = true;
+  material.blending = THREE.AdditiveBlending;
+  material.depthWrite = false;
+  material.side = THREE.DoubleSide;
+  material.defines = { ...(material.defines || {}), USE_UV: '' };
+  const uniforms = { wTime: wearTime, wSeed: { value: recipe.seed || 0 }, wArms: { value: recipe.arms || 3 },
+    wGain: { value: recipe.gain || 1.6 } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed, wArms, wGain;\n' +
+        NOISE.replace('varying vec3 vWearW;', '').replace('varying vec3 vWearO;', '')
+          .replace('uniform float wDirt, wLow, wHigh, wBump, wScale, wRv, wSeed, wSpace, wPeriod, wCv, wBrush;', '')
+          .replace('uniform vec3 wCol;', '').replace(/vec3 wearP\(\)[^\n]*\n/, ''))
+      .replace('#include <opaque_fragment>', `
+      {
+        float v = 1.0 - vUv.y;                                 // glTF flips v: 0 at the inner edge again
+        float spin = wTime * (0.9 / (v + 0.35));                // inner orbits faster
+        float a = vUv.x * 6.2831853 + spin + wSeed;
+        float arms = 0.5 + 0.5 * sin(a * wArms + v * 9.0);
+        float grain = wFbm(vec3(cos(a) * (2.0 + v * 6.0), sin(a) * (2.0 + v * 6.0), v * 4.0 + wTime * 0.2));
+        float inten = pow(1.0 - v, 1.7) * smoothstep(0.0, 0.05, v) * (0.35 + 0.65 * arms * (0.6 + 0.8 * grain));
+        inten += smoothstep(0.06, 0.0, v) * 0.9;              // photon ring hugging the inner edge
+        gl_FragColor = vec4(vec3(0.92, 0.95, 1.0) * inten * wGain, 1.0);
+      }`);
+  };
+  material.customProgramCacheKey = () => 'disc';
+  material.needsUpdate = true;
+}
+
 export function applyWear(material, recipe) {
   if (!recipe || material.userData.wearApplied) return;
   material.userData.wearApplied = true;
   if (recipe.kind === 'fire') { applyFire(material, recipe); return; }
   if (recipe.kind === 'glow') { applyGlow(material, recipe); return; }
+  if (recipe.kind === 'ooze') { applyOoze(material, recipe); return; }
+  if (recipe.kind === 'pulse') { applyPulse(material, recipe); return; }
+  if (recipe.kind === 'disc') { applyDisc(material, recipe); return; }
   const space = recipe.space === 'BIKE' ? 0 : 1;
   const uniforms = {
     wDirt: { value: recipe.dirt || 0 }, wLow: { value: recipe.low ?? 0.15 }, wHigh: { value: recipe.high ?? 0.55 },
