@@ -233,6 +233,35 @@ function applyOrbit(material, recipe) {
   material.needsUpdate = true;
 }
 
+// Flipbook flame (recipe.kind 'spirit'): the card's UVs cover the top-left cell of a 4x4 sheet on black; step
+// through the 16 cells at recipe.fps and add the light over the scene - the Headless Horseman's burning head.
+function applySpirit(material, recipe) {
+  material.userData.isFire = true;
+  material.transparent = true;
+  material.blending = THREE.AdditiveBlending;
+  material.depthWrite = false;
+  material.side = THREE.DoubleSide;
+  const uniforms = { wTime: wearTime, wFps: { value: recipe.fps || 12 } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wFps;')
+      .replace('#include <map_fragment>', `
+      #ifdef USE_MAP
+      {
+        float f = mod(floor(wTime * wFps), 16.0);
+        vec2 cell = vec2(mod(f, 4.0), floor(f / 4.0));
+        vec2 uv = (fract(vMapUv * 4.0) + cell) / 4.0;
+        diffuseColor.rgb = texture2D(map, uv).rgb;
+      }
+      #endif`)
+      .replace('#include <opaque_fragment>', `
+      gl_FragColor = vec4(diffuseColor.rgb * (2.6 + 0.35 * sin(wTime * 13.0)), 1.0);`);
+  };
+  material.customProgramCacheKey = () => 'spirit';
+  material.needsUpdate = true;
+}
+
 export function applyWear(material, recipe) {
   if (!recipe || material.userData.wearApplied) return;
   material.userData.wearApplied = true;
@@ -243,6 +272,7 @@ export function applyWear(material, recipe) {
   if (recipe.kind === 'disc') { applyDisc(material, recipe); return; }
   if (recipe.kind === 'arc') { applyArc(material, recipe); return; }
   if (recipe.kind === 'orbit') { applyOrbit(material, recipe); return; }
+  if (recipe.kind === 'spirit') { applySpirit(material, recipe); return; }
   const space = recipe.space === 'BIKE' ? 0 : 1;
   const uniforms = {
     wDirt: { value: recipe.dirt || 0 }, wLow: { value: recipe.low ?? 0.15 }, wHigh: { value: recipe.high ?? 0.55 },

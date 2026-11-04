@@ -335,10 +335,10 @@
     },
     {
       "id": "surron-light-bee-x-hollow",
-      "name": "sur-ron light bee x · hollow",
+      "name": "sur-ron light bee x · headless horseman",
       "file": "models/surron-light-bee-x-hollow.glb",
       "poster": "models/surron-light-bee-x-hollow.jpg",
-      "bytes": 1300732,
+      "bytes": 1569792,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -358,10 +358,10 @@
       "made": "2026-11-04",
       "tags": [
         "electric dirt bike",
-        "spooky",
-        "animated"
+        "halloween",
+        "headless horseman"
       ],
-      "description": "Spooky: a moonlit night kit with bats, branches and lanterns, a carved glowing pumpkin for a headlight and another riding the tail, a tattered shroud over the seat and cobwebs with spiders in the frame. Both wheels carry a glowing jack-o’-lantern face that rolls with them behind orange LED rim rings, and three will-o’-wisps circle the bike."
+      "description": "The Headless Horseman’s bike: a moonlit night kit with bats, branches and lanterns, a carved pumpkin headlight with the horseman’s burning, screaming spirit-head rising out of it, another pumpkin riding the tail, a tattered shroud over the seat and cobwebs with spiders in the frame. Both wheels carry a glowing jack-o’-lantern face that rolls with them behind orange LED rim rings."
     },
     {
       "id": "surron-light-bee-x-stunt",
