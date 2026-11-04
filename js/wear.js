@@ -208,6 +208,31 @@ function applyArc(material, recipe) {
   material.needsUpdate = true;
 }
 
+// Orbiting glow (recipe.kind 'orbit'): the mesh circles its object's vertical axis (the bike's centre line) and
+// bobs, glowing - the will-o'-wisps round the hollow bike.
+function applyOrbit(material, recipe) {
+  material.userData.isFire = true;
+  const uniforms = { wTime: wearTime, wSeed: { value: recipe.seed || 0 }, wSpeed: { value: recipe.speed || 0.9 } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed, wSpeed;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+      {
+        float a = wTime * wSpeed + wSeed;
+        float c = cos(a), s = sin(a);
+        transformed.xz = mat2(c, -s, s, c) * transformed.xz;
+        transformed.y += 0.06 * sin(wTime * 2.1 + atan(transformed.z, transformed.x) * 3.0);
+      }`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed, wSpeed;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      totalEmissiveRadiance *= 0.75 + 0.35 * sin(wTime * 4.0 + wSeed);`);
+  };
+  material.customProgramCacheKey = () => 'orbit';
+  material.needsUpdate = true;
+}
+
 export function applyWear(material, recipe) {
   if (!recipe || material.userData.wearApplied) return;
   material.userData.wearApplied = true;
@@ -217,6 +242,7 @@ export function applyWear(material, recipe) {
   if (recipe.kind === 'pulse') { applyPulse(material, recipe); return; }
   if (recipe.kind === 'disc') { applyDisc(material, recipe); return; }
   if (recipe.kind === 'arc') { applyArc(material, recipe); return; }
+  if (recipe.kind === 'orbit') { applyOrbit(material, recipe); return; }
   const space = recipe.space === 'BIKE' ? 0 : 1;
   const uniforms = {
     wDirt: { value: recipe.dirt || 0 }, wLow: { value: recipe.low ?? 0.15 }, wHigh: { value: recipe.high ?? 0.55 },
