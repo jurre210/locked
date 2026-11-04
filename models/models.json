@@ -338,7 +338,7 @@
       "name": "sur-ron light bee x · hollow",
       "file": "models/surron-light-bee-x-hollow.glb",
       "poster": "models/surron-light-bee-x-hollow.jpg",
-      "bytes": 1273608,
+      "bytes": 1330264,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -361,75 +361,14 @@
         "spooky",
         "animated"
       ],
-      "description": "Headless-horseman build: a carved jack-o'-lantern glowing on the fork brackets as the headlight, another riding the tail, a tattered black shroud over the back of the seat, bone thorns along the front fender and a cobweb with a spider in each side of the frame. Live flames crown both pumpkins and hellfire jets roar out from under the tail. Printed moonlit-night kit with bats, bare branches and pumpkins; orange rims and spring, black chain."
-    },
-    {
-      "id": "surron-light-bee-x-symbiote",
-      "name": "sur-ron light bee x · symbiote black hole",
-      "file": "models/surron-light-bee-x-symbiote.glb",
-      "poster": "models/surron-light-bee-x-symbiote.jpg",
-      "bytes": 1317544,
-      "env": {
-        "background": "models/surron-trail-env.jpg",
-        "hdr": "models/surron-trail-env.hdr",
-        "height": 1.6,
-        "radius": 60,
-        "sun": [
-          -0.516,
-          0.436,
-          0.737
-        ],
-        "sunIntensity": 3.4,
-        "envIntensity": 0.7,
-        "exposure": 0.72,
-        "shadow": 0.65,
-        "preview": "models/surron-trail-env-preview.jpg"
-      },
-      "made": "2026-11-03",
-      "tags": [
-        "electric dirt bike",
-        "symbiote",
-        "black hole",
-        "black & white"
-      ],
-      "description": "Swallowed by a black hole, in black and white. The headlight is a black event-horizon orb with a white photon ring and a swirling disc; accretion discs spin inside both wheels and a white-hot halo disc circles the whole bike. Living goo still holds it: glossy tendrils up the forks, round the swingarm and subframe, raised white veins with light pulsing along them, strands from the plate to the bars. Liquid-black kit, chrome stanchions, white spring and grips."
-    },
-    {
-      "id": "surron-light-bee-x-overland",
-      "name": "sur-ron light bee x · overland",
-      "file": "models/surron-light-bee-x-overland.glb",
-      "poster": "models/surron-light-bee-x-overland.jpg",
-      "bytes": 1053964,
-      "env": {
-        "background": "models/surron-trail-env.jpg",
-        "hdr": "models/surron-trail-env.hdr",
-        "height": 1.6,
-        "radius": 60,
-        "sun": [
-          -0.516,
-          0.436,
-          0.737
-        ],
-        "sunIntensity": 3.4,
-        "envIntensity": 0.7,
-        "exposure": 0.72,
-        "shadow": 0.65,
-        "preview": "models/surron-trail-env-preview.jpg"
-      },
-      "made": "2026-11-03",
-      "tags": [
-        "electric dirt bike",
-        "adventure",
-        "accessories"
-      ],
-      "description": "Built round its luggage: a powder-coated rack over the short tail, soft cordura panniers strapped to it, a rolled duffel on top, wrap-around handguards and a full alloy bash plate. Sand and olive, gold chain, bronze spring."
+      "description": "Headless-horseman build: a carved jack-o'-lantern glowing on the fork brackets as the headlight, another riding the tail, a tattered black shroud over the back of the seat, bone thorns along the front fender and a cobweb with a spider in each side of the frame. Live flames crown both pumpkins and hellfire jets roar out from under the tail. Printed moonlit-night kit with bats, bare branches and pumpkins; orange rims and spring, black chain. Its wheels burn: flames stream off both tyres behind glowing orange LED rings."
     },
     {
       "id": "surron-light-bee-x-stunt",
       "name": "sur-ron light bee x · stunt",
       "file": "models/surron-light-bee-x-stunt.glb",
       "poster": "models/surron-light-bee-x-stunt.jpg",
-      "bytes": 1037820,
+      "bytes": 1187044,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -446,13 +385,14 @@
         "shadow": 0.65,
         "preview": "models/surron-trail-env-preview.jpg"
       },
-      "made": "2026-11-03",
+      "made": "2026-11-04",
       "tags": [
         "electric dirt bike",
         "stunt",
-        "accessories"
+        "graffiti",
+        "neon"
       ],
-      "description": "Ready to be thrown around: a neon-yellow tube crash cage round both side covers with nylon sliders, knurled stunt pegs on the rear axle and a foam bar pad. Yellow rims and spring on black."
+      "description": "Street-stunt build in neon graffiti: pink, cyan, yellow and lime splatters and spray lines over black, a hot-pink crash cage with sliders, knurled stunt pegs, a yellow bar pad and spring, cyan rims and pink underglow."
     },
     {
       "id": "surron-light-bee-x-nightrider",
@@ -486,41 +426,11 @@
       "description": "Street bike for the night: an LED light bar across the fork caps, mirrors, cyan underglow along the side covers and swingarm, and magenta LED rings inside both rims. Street tail with plate and indicators."
     },
     {
-      "id": "surron-light-bee-x-camper",
-      "name": "sur-ron light bee x · camper",
-      "file": "models/surron-light-bee-x-camper.glb",
-      "poster": "models/surron-light-bee-x-camper.jpg",
-      "bytes": 1047488,
-      "env": {
-        "background": "models/surron-trail-env.jpg",
-        "hdr": "models/surron-trail-env.hdr",
-        "height": 1.6,
-        "radius": 60,
-        "sun": [
-          -0.516,
-          0.436,
-          0.737
-        ],
-        "sunIntensity": 3.4,
-        "envIntensity": 0.7,
-        "exposure": 0.72,
-        "shadow": 0.65,
-        "preview": "models/surron-trail-env-preview.jpg"
-      },
-      "made": "2026-11-03",
-      "tags": [
-        "electric dirt bike",
-        "camping",
-        "accessories"
-      ],
-      "description": "Packed for a night out: a rack with a cooler box, a fishing rod in a holder, a camp lantern hanging off the back and a sleeping mat strapped across the bars. Forest green and tan, bronze rims."
-    },
-    {
       "id": "surron-light-bee-x-racer",
       "name": "sur-ron light bee x · racer",
       "file": "models/surron-light-bee-x-racer.glb",
       "poster": "models/surron-light-bee-x-racer.jpg",
-      "bytes": 1033892,
+      "bytes": 1268572,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -537,14 +447,107 @@
         "shadow": 0.65,
         "preview": "models/surron-trail-env-preview.jpg"
       },
-      "made": "2026-11-03",
+      "made": "2026-11-04",
       "tags": [
         "electric dirt bike",
         "enduro",
         "race",
-        "accessories"
+        "factory"
       ],
-      "description": "Enduro race build: plain side number boards, wrap-around handguards, a full bash plate and red fork guards. Red and white, gold rims, red spring and grips."
+      "description": "Factory race replica: a red, white and black angular livery with a gold pinstripe, plain side number boards, carbon fork guards, gold stanchions, spring and chain, red rims, wrap-around handguards and a full bash plate."
+    },
+    {
+      "id": "surron-light-bee-x-blackhole",
+      "name": "sur-ron light bee x · black hole",
+      "file": "models/surron-light-bee-x-blackhole.glb",
+      "poster": "models/surron-light-bee-x-blackhole.jpg",
+      "bytes": 1163428,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-11-04",
+      "tags": [
+        "electric dirt bike",
+        "black hole",
+        "space",
+        "effects"
+      ],
+      "description": "A black hole on two wheels, in black and white. A Gargantua print on the side covers: a black event horizon inside a blazing lensed ring, its accretion disc cutting across a field of stars. The headlight is a gloss-black orb in a white photon ring with a swirling disc; accretion discs spin in both wheels behind glowing white rim rings, and a white-hot halo with its own photon ring circles the whole bike. Gloss-black everything, chrome stanchions, white spring and grips."
+    },
+    {
+      "id": "surron-light-bee-x-midas",
+      "name": "sur-ron light bee x · midas",
+      "file": "models/surron-light-bee-x-midas.glb",
+      "poster": "models/surron-light-bee-x-midas.jpg",
+      "bytes": 1440016,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-11-04",
+      "tags": [
+        "electric dirt bike",
+        "gold",
+        "luxury",
+        "diamonds"
+      ],
+      "description": "24K: a gold frame, gold rims, gold spring, stanchions and chain; gloss-black covers printed with a gold lattice and a sunburst medallion, ringed by brilliant-cut diamonds set into the panels, and warm gold LED rings glowing inside both rims."
+    },
+    {
+      "id": "surron-light-bee-x-storm",
+      "name": "sur-ron light bee x · storm",
+      "file": "models/surron-light-bee-x-storm.glb",
+      "poster": "models/surron-light-bee-x-storm.jpg",
+      "bytes": 1225276,
+      "env": {
+        "background": "models/surron-trail-env.jpg",
+        "hdr": "models/surron-trail-env.hdr",
+        "height": 1.6,
+        "radius": 60,
+        "sun": [
+          -0.516,
+          0.436,
+          0.737
+        ],
+        "sunIntensity": 3.4,
+        "envIntensity": 0.7,
+        "exposure": 0.72,
+        "shadow": 0.65,
+        "preview": "models/surron-trail-env-preview.jpg"
+      },
+      "made": "2026-11-04",
+      "tags": [
+        "electric dirt bike",
+        "lightning",
+        "electric",
+        "effects"
+      ],
+      "description": "Charged up: a storm-cloud kit split by forked lightning, electric-blue rims and grips, and live arcs crackling over both tyres and down the side covers, with blue underglow and cyan LED rings in the rims."
     }
   ]
 }

@@ -164,12 +164,47 @@ function applyDisc(material, recipe) {
         float a = vUv.x * 6.2831853 + spin + wSeed;
         float arms = 0.5 + 0.5 * sin(a * wArms + v * 9.0);
         float grain = wFbm(vec3(cos(a) * (2.0 + v * 6.0), sin(a) * (2.0 + v * 6.0), v * 4.0 + wTime * 0.2));
-        float inten = pow(1.0 - v, 1.7) * smoothstep(0.0, 0.05, v) * (0.35 + 0.65 * arms * (0.6 + 0.8 * grain));
-        inten += smoothstep(0.06, 0.0, v) * 0.9;              // photon ring hugging the inner edge
+        float inten = pow(1.0 - v, 1.5) * smoothstep(0.0, 0.05, v) * (0.25 + 0.75 * arms * (0.5 + 1.0 * grain));
+        inten += smoothstep(0.07, 0.0, v) * (1.1 + 0.4 * sin(wTime * 6.0 + wSeed));   // photon ring, flickering
+        // hot clumps riding the arms inward
+        float clump = pow(wNoise(vec3(a * 3.0 - wTime * 2.0, v * 12.0 + wTime * 1.5, wSeed)), 6.0) * 4.0;
+        inten += clump * (1.0 - v);
         gl_FragColor = vec4(vec3(0.92, 0.95, 1.0) * inten * wGain, 1.0);
       }`);
   };
   material.customProgramCacheKey = () => 'disc';
+  material.needsUpdate = true;
+}
+
+// Lightning (recipe.kind 'arc'): additive electric blue-white that crackles: each arc strobes on and off in
+// irregular bursts, with brightness running along it.
+function applyArc(material, recipe) {
+  material.userData.isFire = true;
+  material.transparent = true;
+  material.blending = THREE.AdditiveBlending;
+  material.depthWrite = false;
+  const uniforms = { wTime: wearTime, wSeed: { value: recipe.seed || 0 } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed;\nvarying vec3 vWearO;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+      transformed += objectNormal * 0.0015 * sin(wTime * 60.0 + position.x * 400.0 + position.z * 300.0);`)
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWearO = transformed;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float wTime, wSeed;\nvarying vec3 vWearO;\n' +
+        NOISE.replace('varying vec3 vWearW;', '').replace('varying vec3 vWearO;', '')
+          .replace('uniform float wDirt, wLow, wHigh, wBump, wScale, wRv, wSeed, wSpace, wPeriod, wCv, wBrush;', '')
+          .replace('uniform vec3 wCol;', '').replace(/vec3 wearP\(\)[^\n]*\n/, ''))
+      .replace('#include <opaque_fragment>', `
+      {
+        float burst = step(0.45, wNoise(vec3(floor(wTime * 14.0), floor(vWearO.x * 6.0 + vWearO.z * 5.0) + wSeed, 1.0)));
+        float run = 0.5 + 0.5 * sin(vWearO.x * 90.0 + vWearO.z * 70.0 - wTime * 40.0);
+        float inten = burst * (0.6 + 0.8 * run);
+        gl_FragColor = vec4(vec3(0.45, 0.85, 1.0) * inten * 3.0 + vec3(0.6) * inten * run, 1.0);
+      }`);
+  };
+  material.customProgramCacheKey = () => 'arc';
   material.needsUpdate = true;
 }
 
@@ -181,6 +216,7 @@ export function applyWear(material, recipe) {
   if (recipe.kind === 'ooze') { applyOoze(material, recipe); return; }
   if (recipe.kind === 'pulse') { applyPulse(material, recipe); return; }
   if (recipe.kind === 'disc') { applyDisc(material, recipe); return; }
+  if (recipe.kind === 'arc') { applyArc(material, recipe); return; }
   const space = recipe.space === 'BIKE' ? 0 : 1;
   const uniforms = {
     wDirt: { value: recipe.dirt || 0 }, wLow: { value: recipe.low ?? 0.15 }, wHigh: { value: recipe.high ?? 0.55 },
