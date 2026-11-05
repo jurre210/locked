@@ -334,11 +334,11 @@
       "description": "One of my own: clear-coated carbon-weave covers, tank, fenders and fork guards with a red slash and pinstripes, gunmetal frame, red rims, red spring and grips, short tail and round LED headlight."
     },
     {
-      "id": "surron-light-bee-x-hollow",
-      "name": "sur-ron light bee x · headless horseman",
-      "file": "models/surron-light-bee-x-hollow.glb",
-      "poster": "models/surron-light-bee-x-hollow.jpg",
-      "bytes": 1569792,
+      "id": "surron-light-bee-x-hellfire",
+      "name": "sur-ron light bee x · hellfire",
+      "file": "models/surron-light-bee-x-hellfire.glb",
+      "poster": "models/surron-light-bee-x-hellfire.jpg",
+      "bytes": 1263328,
       "env": {
         "background": "models/surron-trail-env.jpg",
         "hdr": "models/surron-trail-env.hdr",
@@ -355,13 +355,13 @@
         "shadow": 0.65,
         "preview": "models/surron-trail-env-preview.jpg"
       },
-      "made": "2026-11-04",
+      "made": "2026-11-05",
       "tags": [
         "electric dirt bike",
-        "halloween",
-        "headless horseman"
+        "hell rider",
+        "flaming wheels"
       ],
-      "description": "The Headless Horseman’s bike: a moonlit night kit with bats, branches and lanterns, a carved pumpkin headlight with the horseman’s burning, screaming spirit-head rising out of it, another pumpkin riding the tail, a tattered shroud over the seat and cobwebs with spiders in the frame. Both wheels carry a glowing jack-o’-lantern face that rolls with them behind orange LED rim rings."
+      "description": "A hell rider’s bike: black chrome frame, a tall layered flame kit with a heavy chain drawn across it, real steel chains hanging along both covers, flames streaming off both tyres behind orange-red LED rim rings, chrome spring and fork stanchions."
     },
     {
       "id": "surron-light-bee-x-stunt",
