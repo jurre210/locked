@@ -184,36 +184,6 @@
       "description": "Supermoto build: champagne frame and swingarm, side covers off to show the brushed aluminium battery with an orange band, gold rims on road tyres, red fork guards and grips, short tail. Same ride animation."
     },
     {
-      "id": "surron-light-bee-x-ember",
-      "name": "sur-ron light bee x · ember",
-      "file": "models/surron-light-bee-x-ember.glb",
-      "poster": "models/surron-light-bee-x-ember.jpg",
-      "bytes": 1242888,
-      "env": {
-        "background": "models/surron-trail-env.jpg",
-        "hdr": "models/surron-trail-env.hdr",
-        "height": 1.6,
-        "radius": 60,
-        "sun": [
-          -0.516,
-          0.436,
-          0.737
-        ],
-        "sunIntensity": 3.4,
-        "envIntensity": 0.7,
-        "exposure": 0.72,
-        "shadow": 0.65,
-        "preview": "models/surron-trail-env-preview.jpg"
-      },
-      "made": "2026-10-31",
-      "tags": [
-        "electric dirt bike",
-        "flame kit",
-        "animated"
-      ],
-      "description": "One of my own: black bike licked by a printed flame kit, yellow to orange to red over halftone smoke, on the side covers, rear covers and number plate. Orange anodised rims, yellow shock spring, gloss black plastics."
-    },
-    {
       "id": "surron-light-bee-x-glacier",
       "name": "sur-ron light bee x · glacier",
       "file": "models/surron-light-bee-x-glacier.glb",
