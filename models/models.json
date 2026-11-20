@@ -1,6 +1,38 @@
 {
   "models": [
     {
+      "id": "mercedes-190e-evo-ii",
+      "name": "mercedes-benz 190e 2.5-16 evolution ii",
+      "file": "models/mercedes-190e-evo-ii.glb",
+      "poster": "models/mercedes-190e-evo-ii.jpg",
+      "bytes": 2301484,
+      "env": {
+        "background": "models/m190-circuit-env.jpg",
+        "hdr": "models/m190-circuit-env.hdr",
+        "height": 1.6,
+        "radius": 30.0,
+        "sun": [
+          0.2935,
+          0.1435,
+          0.9451
+        ],
+        "sunColor": "#ffc68a",
+        "sunIntensity": 3.0,
+        "envIntensity": 0.9,
+        "exposure": 0.85,
+        "shadow": 0.6,
+        "floor": 18,
+        "preview": "models/m190-circuit-env-preview.jpg"
+      },
+      "made": "2026-11-20",
+      "tags": [
+        "dtm homologation",
+        "widebody",
+        "burnout"
+      ],
+      "description": "The Evo II built from scratch in Blender from a reference photo: deep black metallic clearcoat over the flared arches, side skirts, splitter and big adjustable rear wing, twin-projector headlights, ribbed tail lights and a full interior behind the glass. 18\" five-spoke wheels on performance tyres with real tread blocks and raised sidewall lettering, drilled and vented discs, six-piston calipers. Press play for the burnout: the rear wheels light up, the body squats and rolls on its springs and tyre smoke pours back over the grid. Parked on pole at a golden-hour circuit built for it."
+    },
+    {
       "id": "surron-light-bee-x",
       "name": "sur-ron light bee x",
       "file": "models/surron-light-bee-x.glb",

@@ -7,6 +7,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
 import { applyWear, wearTime } from './wear.js?v=10';
+import { Smoke } from './smoke.js?v=2';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('view');
@@ -45,7 +46,9 @@ scene.add(rim);
 const shadowFloor = new THREE.Mesh(new THREE.CircleGeometry(1, 96), new THREE.ShadowMaterial({ opacity: 0.45 }));
 shadowFloor.rotation.x = -Math.PI / 2;
 shadowFloor.receiveShadow = true;
+shadowFloor.material.depthWrite = false;       // smoke puffs sink into it softly instead of being cut off
 scene.add(shadowFloor);
+const smoke = new Smoke(scene);
 const grid = new THREE.GridHelper(1, 20, 0x2a2a30, 0x18181c);
 grid.visible = false;
 scene.add(grid);
@@ -129,6 +132,7 @@ function applyLight() {
     rim.intensity = 0;
     renderer.toneMappingExposure = s.exposure ?? 0.8;
     shadowFloor.material.opacity = s.shadow ?? 0.55;
+    shadowFloor.scale.setScalar(Math.max(r * 3, s.floor ?? 0));     // low suns throw long shadows
     grid.visible = false;
     controls.maxPolarAngle = Math.PI / 2 - 0.04;          // stay above the projected ground
     controls.maxDistance = Math.min(r * 12, s.radius * 0.45);
@@ -144,11 +148,13 @@ function applyLight() {
     rim.position.set(-L.dir[0], 2, -L.dir[2]).normalize().multiplyScalar(r * 4).add(state.center);
     renderer.toneMappingExposure = L.exp;
     shadowFloor.material.opacity = 0.45;
+    shadowFloor.scale.setScalar(r * 3);
     controls.maxPolarAngle = Math.PI;
     controls.maxDistance = r * 12;
     $('light-name').textContent = L.name;
   }
   sun.target.position.copy(state.center);
+  smoke.setLight(sun.color, sun.intensity, !!E);
 }
 
 function frameView() {
@@ -181,6 +187,7 @@ function clearModel() {
   }
   state.root = state.mixer = state.follow = state.chain = null;
   state.duration = 0;
+  smoke.detach();
 }
 
 function showError(msg) {
@@ -230,6 +237,8 @@ function load(url, meta, size) {
     if (token !== loadToken) return;               // another model was picked meanwhile
     scene.add(root);
     state.chain = setupChain(root);
+    root.updateMatrixWorld(true);
+    smoke.attach(root);
     state.markFrame = true;
     state.root = root;
     root.updateMatrixWorld(true);
@@ -535,12 +544,14 @@ function animate() {
     if (controls.autoRotate && photo.drag === null && (spinT += dt) > 1 / 14) { spinT = 0; showFrame(photo.idx - 1); }
     return;
   }
-  if (state.mixer && state.playing && !state.seeking) {
+  const running = state.mixer && state.playing && !state.seeking;
+  if (running) {
     state.mixer.update(dt * state.speed);
   }
   if (state.mixer && state.duration) {
     const t = state.mixer.time % state.duration;
     updateChain(t);
+    smoke.update(running ? dt * state.speed : 0, t, camera, tmpS.subVectors(sun.position, sun.target.position));
     if (!state.seeking) $('scrub').value = Math.round((t / state.duration) * 1000);
     $('time').textContent = `${t.toFixed(1)} / ${state.duration.toFixed(1)} s`;
   }
@@ -556,7 +567,7 @@ function animate() {
   renderer.render(scene, camera);
   if (state.markFrame) { state.markFrame = false; performance.mark('model-first-frame'); }
 }
-const tmpV = new THREE.Vector3();
+const tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3();
 
-window.__viewer = { renderer, scene, camera, controls, state, applyLight, LIGHTS, updateChain };   // debug handle
+window.__viewer = { renderer, scene, camera, controls, state, applyLight, LIGHTS, updateChain, smoke, env };   // debug handle
 init();
