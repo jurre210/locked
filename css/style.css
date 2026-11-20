@@ -86,3 +86,23 @@ button, select, input { font: inherit; color: inherit; }
   .side { border-left: 0; border-top: 1px solid var(--line); }
   .hint { display: none; }
 }
+
+/* camera: angle presets, lens, walk */
+.cam { position: absolute; left: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start;
+       max-width: calc(100% - 32px); }
+.transport:not([hidden]) ~ .cam { bottom: 84px; }
+.cam-row { display: flex; gap: 6px; align-items: center; }
+.cam-k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; padding: 0 2px 0 6px; }
+.pills { display: flex; flex-wrap: wrap; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: 11px;
+         background: rgba(10,10,12,.82); }
+.pills button, .pill-solo { border: 0; background: none; padding: 6px 11px; border-radius: 8px; cursor: pointer; font-size: 12px;
+                            color: var(--muted); white-space: nowrap; transition: color .15s, background .15s; }
+.pills button:hover, .pill-solo:hover { color: var(--text); }
+.pills button.on { background: var(--text); color: #000; }
+.pill-solo { border: 1px solid var(--line); background: rgba(10,10,12,.82); padding: 9px 14px; border-radius: 11px; }
+.pill-solo.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.walk-hint { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); font-size: 12px; color: #ddd;
+             background: rgba(0,0,0,.6); padding: 7px 14px; border-radius: 20px; pointer-events: none; white-space: nowrap; }
+.finish { margin-top: 14px; display: flex; align-items: center; gap: 10px; }
+.finish .pills { background: var(--card); }
+@media (pointer: coarse) { #cam-walk { display: none; } }

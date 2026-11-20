@@ -5,7 +5,7 @@
       "name": "mercedes-benz 190e 2.5-16 evolution ii",
       "file": "models/mercedes-190e-evo-ii.glb",
       "poster": "models/mercedes-190e-evo-ii.jpg",
-      "bytes": 2301484,
+      "bytes": 2364004,
       "env": {
         "background": "models/m190-circuit-env.jpg",
         "hdr": "models/m190-circuit-env.hdr",
@@ -24,13 +24,57 @@
         "floor": 18,
         "preview": "models/m190-circuit-env-preview.jpg"
       },
+      "views": {
+        "wheel": {
+          "pos": [
+            2.62,
+            0.52,
+            2.3
+          ],
+          "target": [
+            1.37,
+            0.3,
+            0.8
+          ],
+          "fov": 30
+        },
+        "inside": {
+          "pos": [
+            -0.6,
+            1.13,
+            -0.372
+          ],
+          "target": [
+            -0.36,
+            1.07,
+            -0.372
+          ],
+          "fov": 66,
+          "inside": true
+        }
+      },
+      "finishes": [
+        {
+          "name": "gloss black"
+        },
+        {
+          "name": "matte black",
+          "material": "Paint_Black",
+          "color": "#0e0e0f",
+          "roughness": 0.56,
+          "metalness": 0,
+          "clearcoat": 0,
+          "clearcoatRoughness": 0,
+          "specularIntensity": 0.5
+        }
+      ],
       "made": "2026-11-20",
       "tags": [
         "dtm homologation",
         "widebody",
         "burnout"
       ],
-      "description": "The Evo II built from scratch in Blender from a reference photo: deep black metallic clearcoat over the flared arches, side skirts, splitter and big adjustable rear wing, twin-projector headlights, ribbed tail lights and a full interior behind the glass. 18\" five-spoke wheels on performance tyres with real tread blocks and raised sidewall lettering, drilled and vented discs, six-piston calipers. Press play for the burnout: the rear wheels light up, the body squats and rolls on its springs and tyre smoke pours back over the grid. Parked on pole at a golden-hour circuit built for it."
+      "description": "The Evo II built from scratch in Blender from a reference photo: deep black metallic clearcoat over the flared arches, side skirts, splitter and big adjustable rear wing, smoked twin-projector headlights, a raised grille shell, honeycomb intake, ribbed tail lights and a full interior behind the glass. 18\" five-spoke wheels on performance tyres with real tread blocks and raised sidewall lettering, drilled and vented discs, six-piston calipers. Press play for the burnout: the rear wheels light up, the body squats and rolls on its springs and tyre smoke pours back over the grid. Parked on pole at a golden-hour circuit built for it."
     },
     {
       "id": "surron-light-bee-x",

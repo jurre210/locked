@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>locked — 3d</title>
   <meta name="description" content="3d models made in blender, viewable in the browser">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
   <!-- start the CDN connection and the big three.js module before viewer.js asks for them -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js">
@@ -56,6 +56,15 @@
         </select>
       </div>
 
+      <div class="cam" id="cam">
+        <div class="pills" id="cam-views" title="camera angles"></div>
+        <div class="cam-row">
+          <span class="cam-k">lens</span><div class="pills" id="cam-lens"></div>
+          <button class="pill-solo" id="cam-walk" title="walk around it yourself (V)">walk</button>
+        </div>
+      </div>
+      <div class="walk-hint" id="walk-hint" hidden>WASD move · drag to look · Q / E lower / raise · shift run · scroll zoom · V or esc to stop</div>
+
       <div class="loading" id="loading" hidden><div class="bar"><i id="bar"></i></div><span id="load-txt">loading</span></div>
       <div class="drop" id="drop" hidden><span>drop to view</span></div>
       <div class="error" id="error" hidden></div>
@@ -65,6 +74,7 @@
       <div class="info" id="info">
         <h1 id="m-name">—</h1>
         <p id="m-desc" class="muted"></p>
+        <div class="finish" id="finish" hidden><span class="label">paint</span><div class="pills" id="finish-pills"></div></div>
         <dl class="stats" id="m-stats"></dl>
       </div>
       <h2 class="label">models</h2>
@@ -73,6 +83,6 @@
   </main>
 
   <!-- bump ?v= on every viewer change: Pages lets browsers cache files for 10 minutes -->
-  <script type="module" src="js/viewer.js?v=17"></script>
+  <script type="module" src="js/viewer.js?v=18"></script>
 </body>
 </html>

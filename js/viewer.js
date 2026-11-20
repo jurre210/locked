@@ -8,6 +8,7 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
 import { applyWear, wearTime } from './wear.js?v=10';
 import { Smoke } from './smoke.js?v=2';
+import { CameraRig } from './cam.js?v=1';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('view');
@@ -27,7 +28,7 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environment = envTex;
 
-const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 500);
+const camera = new THREE.PerspectiveCamera(37.8, 1, 0.01, 500);      // a 35 mm lens
 camera.position.set(3, 1.5, 3);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
@@ -99,6 +100,7 @@ async function loadEnv(spec) {
 const state = { models: [], current: null, root: null, mixer: null, duration: 0, playing: true, speed: 1,
                 radius: 1, center: new THREE.Vector3(), wire: false, seeking: false };
 const clock = new THREE.Clock();
+const rig = new CameraRig({ camera, controls, canvas, state, limits: () => ({ maxDist: controls.maxDistance }) });
 const loader = new GLTFLoader();
 const draco = new DRACOLoader();
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/gltf/');
@@ -256,7 +258,10 @@ function load(url, meta, size) {
     sc.far = sph.radius * 10;
     sc.updateProjectionMatrix();
     applyLight();
+    rig.setModel(meta);
     frameView();
+    rig.markView('¾ front');
+    setupFinishes(root, meta);
     setWire(state.wire);
     // animations: every clip plays together on one timeline
     if (gltf.animations.length) {
@@ -265,12 +270,18 @@ function load(url, meta, size) {
       state.duration = Math.max(...gltf.animations.map((a) => a.duration));
       // camera follows the height of the top-most moving node (jumps stay in frame)
       const depth = (o) => { let d = 0; while (o && o !== root) { o = o.parent; d++; } return d; };
-      let best = null;
+      let best = null, bestTrack = null;
       gltf.animations.forEach((a) => a.tracks.forEach((t) => {
         if (!t.name.endsWith('.position')) return;
         const n = root.getObjectByName(t.name.slice(0, -'.position'.length));
-        if (n && (!best || depth(n) < depth(best))) best = n;
+        if (n && (!best || depth(n) < depth(best))) { best = n; bestTrack = t; }
       }));
+      // only real height changes (jumps) are worth following; a body squatting on its springs is not
+      if (bestTrack) {
+        let lo = Infinity, hi = -Infinity;
+        for (let i = 1; i < bestTrack.values.length; i += 3) { lo = Math.min(lo, bestTrack.values[i]); hi = Math.max(hi, bestTrack.values[i]); }
+        if (hi - lo < 0.15) best = null;
+      }
       state.follow = best;
       state.followY = best ? best.getWorldPosition(new THREE.Vector3()).y : 0;
       $('transport').hidden = false;
@@ -385,7 +396,8 @@ $('t-wire').onclick = () => setWire(!state.wire);
 $('t-light').onclick = () => { lightIdx = (lightIdx + 1) % LIGHTS.length; applyLight(); };
 $('t-bg').onclick = () => { env.on = !env.on; applyLight(); };
 $('t-grid').onclick = () => { grid.visible = !grid.visible; $('t-grid').classList.toggle('on', grid.visible); };
-$('t-reset').onclick = frameView;
+const resetView = () => rig.view('¾ front', [0.75, 0.38, 1.0]);
+$('t-reset').onclick = resetView;
 $('t-full').onclick = () => {
   if (document.fullscreenElement) document.exitFullscreen();
   else stage.requestFullscreen?.();
@@ -400,6 +412,8 @@ $('t-shot').onclick = () => {
 window.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   const k = e.key.toLowerCase();
+  if (k === 'v' && !photo.on) { rig.setWalk(!rig.walking); return; }
+  if (rig.walking && k !== 'f') return;              // the walk keys belong to the camera rig
   if (k === ' ') { e.preventDefault(); setPlaying(!state.playing); }
   else if (k === 'a') $('t-rotate').click();
   else if (k === 'w') $('t-wire').click();
@@ -408,7 +422,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'p' && photo.n) setMode(!photo.on);
   else if (photo.on && (k === 'arrowleft' || k === 'arrowright')) showFrame(photo.idx + (k === 'arrowleft' ? 1 : -1));
   else if (k === 'g') $('t-grid').click();
-  else if (k === 'r') frameView();
+  else if (k === 'r') resetView();
   else if (k === 'f') $('t-full').click();
 });
 
@@ -555,7 +569,8 @@ function animate() {
     if (!state.seeking) $('scrub').value = Math.round((t / state.duration) * 1000);
     $('time').textContent = `${t.toFixed(1)} / ${state.duration.toFixed(1)} s`;
   }
-  if (state.follow) {
+  const drove = rig.update(dt);
+  if (state.follow && !rig.walking) {
     // damped: the camera glides after the model instead of copying every frame's motion
     const y = state.follow.getWorldPosition(tmpV).y;
     const d = (y - state.followY) * Math.min(1, dt * 4);
@@ -563,11 +578,57 @@ function animate() {
     camera.position.y += d * 0.8;
     controls.target.y += d * 0.8;
   }
-  controls.update();
+  if (!drove) controls.update();
   renderer.render(scene, camera);
   if (state.markFrame) { state.markFrame = false; performance.mark('model-first-frame'); }
 }
 const tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3();
 
-window.__viewer = { renderer, scene, camera, controls, state, applyLight, LIGHTS, updateChain, smoke, env };   // debug handle
+// ---------------------------------------------------------------- paint finishes ("finishes" in models.json)
+// [{ "name": "gloss black" }, { "name": "matte black", "material": "Paint_Black", "color": "#1b1b1d",
+//    "roughness": 0.5, "clearcoat": 0, ... }]  - the first one is the model as exported
+const finish = { list: [], orig: new Map(), mats: [] };
+const FINISH_KEYS = ['color', 'roughness', 'metalness', 'clearcoat', 'clearcoatRoughness', 'specularIntensity'];
+function setupFinishes(root, meta) {
+  finish.list = meta.finishes || [];
+  finish.orig.clear();
+  finish.mats = [];
+  const names = new Set(finish.list.map((f) => f.material).filter(Boolean));
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => {
+      if (!names.has(m.name) || finish.orig.has(m)) return;
+      finish.orig.set(m, Object.fromEntries(FINISH_KEYS.map((k) => [k, k === 'color' ? m.color.clone() : m[k]])));
+      finish.mats.push(m);
+    });
+  });
+  const box = $('finish');
+  box.hidden = finish.list.length < 2;
+  $('finish-pills').innerHTML = '';
+  finish.list.forEach((f, i) => {
+    const b = document.createElement('button');
+    b.textContent = f.name;
+    b.onclick = () => applyFinish(i);
+    $('finish-pills').appendChild(b);
+  });
+  if (finish.list.length) applyFinish(0);
+}
+function applyFinish(i) {
+  const f = finish.list[i] || {};
+  for (const m of finish.mats) {
+    const o = finish.orig.get(m);
+    for (const k of FINISH_KEYS) {
+      if (k === 'color') m.color.copy(o.color); else if (o[k] !== undefined) m[k] = o[k];
+    }
+    if (m.name !== f.material) continue;
+    for (const k of FINISH_KEYS) {
+      if (f[k] === undefined) continue;
+      if (k === 'color') m.color.set(f[k]); else m[k] = f[k];
+    }
+    m.needsUpdate = true;
+  }
+  [...$('finish-pills').children].forEach((b, j) => b.classList.toggle('on', j === i));
+}
+
+window.__viewer = { renderer, scene, camera, controls, state, applyLight, LIGHTS, updateChain, smoke, env, rig, applyFinish };   // debug handle
 init();
