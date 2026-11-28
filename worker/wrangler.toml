@@ -1,0 +1,8 @@
+name = "deepcast-discord"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+# filled in by setup-discord.ps1
+DISCORD_CLIENT_ID = ""
+DISCORD_PUBLIC_KEY = ""

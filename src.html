@@ -159,6 +159,7 @@ button.ghost:hover{color:#fff;border-color:var(--line)}
 </div>
 <div id="tiles"></div>
 
+<script src="discord.js"></script>
 <script>
 /*DATA*/
 const TIER=[null,
@@ -247,7 +248,7 @@ function startGame(mode,seed){sfx.click();clearInterval(autoT);let qs;
  // Endless + friends never use today's or tomorrow's daily prompts, so they can't spoil the Daily.
  else{const r=mode==="mp"?rng(seed):Math.random;const d=diveNo(),skip=new Set([...dayCats(d),...dayCats(d+1)]);qs=shuffled(CATS.length,r).filter(c=>!skip.has(c)).slice(0,QUESTIONS).map(ci=>build(CATS[ci],n=>Math.floor(r()*n)));}
  G={mode,daily:mode==="daily",seed,qs,qi:0,score:0,hist:[],picks:[],done:false};
- ["title","end","friends"].forEach(id=>$(id).classList.add("hidden"));$("panel").classList.remove("hidden");S.playing=true;loadQ();pushState(true);}
+ ["title","end","friends"].forEach(id=>$(id).classList.add("hidden"));$("panel").classList.remove("hidden");S.playing=true;loadQ();pushState(true);if(window.DC&&DC.on)DC.started(G);}
 function loadQ(){clearInterval(autoT);G.cast=0;G.seen=new Set();G.suggest=null;
  $("prompt").textContent=G.qs[G.qi].q;$("log").innerHTML="";$("msg").textContent="One cast — make it count. Rarer answers sink deeper.";
  $("awayBox").classList.add("hidden");$("f").classList.remove("hidden");updMeta();$("inp").value="";lock(false);}
@@ -282,7 +283,7 @@ const RANKS=[[0,"Bait Dangler"],[60,"Deckhand"],[150,"Angler"],[300,"Deep-Sea Ca
 const rankOf=v=>RANKS.filter(r=>v>=r[0]).pop()[1];
 function rowsHTML(picks){return picks.map((p,i)=>{const T=TIER[p.tier];return `<div class="er"><span class="n">${i+1}</span><div class="q"><span class="qq">${esc(p.q)}</span><span class="chip" style="background:${T.hex}">${esc(p.name)}${p.fixed?" ✎":""}</span></div><div class="dep"><div class="dbar"><i style="width:${(p.tier/6*100).toFixed(0)}%;background:${T.hex}"></i></div><span>${T.zone} · ${depthAt(p.tier).toLocaleString()} m</span></div><b class="pts">+${p.pts}</b></div>`;}).join("");}
 function endGame(){G.done=true;S.playing=false;$("panel").classList.add("hidden");$("end").classList.remove("hidden");$("endScore").textContent=G.score;sfx.end(G.score);
- $("endRank").textContent=rankOf(G.score);$("endRows").innerHTML=rowsHTML(G.picks);renderEndFriends();pushState(true);
+ $("endRank").textContent=rankOf(G.score);$("endRows").innerHTML=rowsHTML(G.picks);renderEndFriends();pushState(true);if(window.DC&&DC.on)DC.finished(G);
  const k=G.daily?"deepcast-daily-"+todayKey():"deepcast-endless";const best=+(store.get(k)||0);if(G.score>best&&G.mode!=="mp")store.set(k,G.score);
  $("endNote").textContent=(G.daily?`Daily cast #${diveNo()}`:G.mode==="mp"?"Friends game":"Endless")+(G.mode==="mp"?"":G.score>best?" · new best!":` · best ${best}`);}
 $("shareBtn").onclick=()=>{sfx.click();const t=`DEEPCAST ${G.daily?"#"+diveNo():G.mode==="mp"?"with friends":"endless"} — ${G.score} pts (${rankOf(G.score)})\n${G.hist.join("")}\n${G.picks.map((p,i)=>`${i+1}. ${p.name} +${p.pts}`).join("\n")}`;navigator.clipboard?.writeText(t).then(()=>$("shareBtn").textContent="Copied!",()=>{});};

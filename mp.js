@@ -4,17 +4,18 @@
 const MP={on:false,host:false,peer:null,conns:new Map(),hostConn:null,me:"",myId:"",code:"",players:new Map(),lastSend:0,tiles:new Map()};
 const PFX="deepcast-v1-";
 const cleanName=n=>String(n||"").replace(/[<>&"]/g,"").trim().slice(0,16)||"Angler";
-function loadPeer(){return window.Peer?Promise.resolve():new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";sc.onload=res;sc.onerror=()=>rej(new Error("Couldn't load the multiplayer library — check your connection."));document.head.appendChild(sc);});}
+function loadPeer(){if(window.Peer)return Promise.resolve();const add=src=>new Promise((res,rej)=>{const sc=document.createElement("script");sc.src=src;sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
+ return add("vendor/peerjs.min.js").catch(()=>add("https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js")).catch(()=>{throw new Error("Couldn't load the multiplayer library — check your connection.");});}
 function frMsg(t){$("frMsg").textContent=t||"";}
 function mkCode(){const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789";return Array.from({length:5},()=>A[Math.floor(Math.random()*A.length)]).join("");}
 function mpSend(msg){if(!MP.on)return;try{if(MP.host){for(const c of MP.conns.values())if(c.open)c.send(msg);}else if(MP.hostConn&&MP.hostConn.open)MP.hostConn.send(msg);}catch(e){}}
 function myName(){const n=cleanName($("frName").value);store.set("deepcast-name",n);return n;}
-async function createRoom(tries=0){frMsg("Opening a room…");try{await loadPeer();}catch(e){frMsg(e.message);return;}
- MP.code=mkCode();MP.host=true;MP.me=myName();const peer=new Peer(PFX+MP.code);MP.peer=peer;
+async function createRoom(tries=0,fixed){frMsg("Opening a room…");try{await loadPeer();}catch(e){frMsg(e.message);return;}
+ MP.code=fixed||mkCode();MP.host=true;MP.me=myName();const peer=new Peer(PFX+MP.code);MP.peer=peer;
  peer.on("open",id=>{MP.myId=id;MP.on=true;MP.players=new Map([[id,{name:MP.me,score:0,qi:0}]]);frMsg("");showLobby();});
  peer.on("connection",conn=>{conn.on("open",()=>MP.conns.set(conn.peer,conn));conn.on("data",d=>hostRecv(conn,d));
   conn.on("close",()=>{MP.conns.delete(conn.peer);MP.players.delete(conn.peer);mpSend({t:"gone",id:conn.peer});lobbyChanged();});});
- peer.on("error",e=>{if(e.type==="unavailable-id"&&tries<3){peer.destroy();createRoom(tries+1);}else frMsg("Connection problem: "+(e.type||e.message));});}
+ peer.on("error",e=>{if(e.type==="unavailable-id"&&fixed){peer.destroy();joinRoom(fixed);}else if(e.type==="unavailable-id"&&tries<3){peer.destroy();createRoom(tries+1);}else frMsg("Connection problem: "+(e.type||e.message));});}
 async function joinRoom(code){code=code.toUpperCase().replace(/[^A-Z0-9]/g,"");if(code.length!==5){frMsg("Room codes are 5 characters.");return;}
  frMsg("Joining…");try{await loadPeer();}catch(e){frMsg(e.message);return;}
  MP.code=code;MP.host=false;MP.me=myName();const peer=new Peer();MP.peer=peer;
@@ -43,7 +44,12 @@ function renderLobby(){$("frPlayers").innerHTML=[...MP.players].map(([id,p])=>`<
 function mpLeave(){if(MP.peer){try{MP.peer.destroy();}catch(e){}}Object.assign(MP,{on:false,host:false,peer:null,hostConn:null,code:""});MP.conns.clear();MP.players.clear();clearTiles();}
 function openFriends(code){sfx.click();$("friends").classList.remove("hidden");$("frStart").classList.remove("hidden");$("frLobby").classList.add("hidden");frMsg("");
  $("frName").value=store.get("deepcast-name")||"";if(code)$("frCode").value=code;($("frName").value?(code?$("frJoin"):$("frCreate")):$("frName")).focus();}
-$("friendsBtn").onclick=()=>openFriends();
+async function discordRoom(){sfx.click();$("friends").classList.remove("hidden");$("frStart").classList.add("hidden");$("frLobby").classList.add("hidden");frMsg("");$("frMsg").style.color="";$("frMsg").textContent="Finding everyone in this channel…";
+ try{await DC.ready;}catch(e){frMsg("Couldn't connect to Discord.");return;}
+ $("frName").value=(DC.name||"Angler").slice(0,16);let h=0;for(const ch of DC.instanceId||DC.channelId||"x")h=Math.imul(h^ch.charCodeAt(0),16777619)>>>0;
+ const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let code="";for(let i=0;i<5;i++){code+=A[h%A.length];h=Math.floor(h/A.length)+i*7919;}
+ $("frCopy").classList.add("hidden");createRoom(0,code);}
+$("friendsBtn").onclick=()=>window.DC&&DC.on?discordRoom():openFriends();
 $("frCreate").onclick=()=>{if(!$("frName").value.trim()){frMsg("Pick a name first.");return;}createRoom();};
 $("frJoin").onclick=()=>{if(!$("frName").value.trim()){frMsg("Pick a name first.");return;}joinRoom($("frCode").value);};
 $("frCode").addEventListener("keydown",e=>{if(e.key==="Enter")$("frJoin").click();});
