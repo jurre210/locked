@@ -244,7 +244,8 @@ function dayCats(d){if(DAYC.has(d))return DAYC.get(d);let prev=[];for(let x=Math
  prev=shuffled(CATS.length,rng(5000+x*7919)).filter(c=>!prev.includes(c)).slice(0,QUESTIONS);DAYC.set(x,prev);}return prev;}
 function startGame(mode,seed){sfx.click();clearInterval(autoT);let qs;
  if(mode==="daily"){const d=diveNo();qs=dayCats(d).map(ci=>build(CATS[ci],n=>shuffled(n,rng(ci*131+7))[d%n]));}
- else{const r=mode==="mp"?rng(seed):Math.random;qs=shuffled(CATS.length,r).slice(0,QUESTIONS).map(ci=>build(CATS[ci],n=>Math.floor(r()*n)));}
+ // Endless + friends never use today's or tomorrow's daily prompts, so they can't spoil the Daily.
+ else{const r=mode==="mp"?rng(seed):Math.random;const d=diveNo(),skip=new Set([...dayCats(d),...dayCats(d+1)]);qs=shuffled(CATS.length,r).filter(c=>!skip.has(c)).slice(0,QUESTIONS).map(ci=>build(CATS[ci],n=>Math.floor(r()*n)));}
  G={mode,daily:mode==="daily",seed,qs,qi:0,score:0,hist:[],picks:[],done:false};
  ["title","end","friends"].forEach(id=>$(id).classList.add("hidden"));$("panel").classList.remove("hidden");S.playing=true;loadQ();pushState(true);}
 function loadQ(){clearInterval(autoT);G.cast=0;G.seen=new Set();G.suggest=null;
