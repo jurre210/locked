@@ -1,6 +1,2 @@
-node_modules/
-.DS_Store
-Thumbs.db
-desktop.ini
-*.log
 .claude/
+__pycache__/
