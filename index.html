@@ -317,7 +317,7 @@ const sfx={
  zone:i=>{const f=[0,980,820,660,520,400,300][i]||300;tone(f,.9,"sine",.05,0,0,.01);tone(f,.6,"sine",.018,0,.32,.01);},
  bite:t=>{if(t<=2){tone(1400,.03,"square",.03);tone(1600,.03,"square",.03,0,.09);tone(1500,.03,"square",.03,0,.2);}
   else{tone(90,.35,"sine",.14,45);noise(.18,.07,420,"bandpass",260,.04,4);noise(.16,.06,380,"bandpass",240,.3,4);if(t>=5)tone(55,.8,"sawtooth",.04,40,.1,.05);}},
- tick:k=>noise(.022,.045,2600+k*1800,"highpass"),
+ tick:k=>noise(.022,.028,2600+k*1800,"highpass"),
  surface:t=>{noise(.2+.07*t,.06+.02*t,2200,"lowpass",300);tone(400,.12,"sine",.05,900,.05);},
  catch:t=>{
   if(t===1){tone(1047,.09,"square",.04);tone(1319,.14,"square",.04,0,.08);}
@@ -336,9 +336,9 @@ const sfx={
  end:s=>{const n=s>=1200?[523,659,784,1047,1319,1568]:s>=500?[523,659,784,1047]:[392,523,659];n.forEach((f,i)=>tone(f,.22,"square",.04,0,i*.12));chord(n.slice(-3),1,"triangle",.03,n.length*.12);}
 };
 function droneStart(){const a=ac();if(!a||SND.drone)return;const o1=a.createOscillator(),o2=a.createOscillator(),lfo=a.createOscillator(),lg=a.createGain(),f=a.createBiquadFilter(),g=a.createGain();
- o1.type="sine";o2.type="triangle";o1.frequency.value=130;o2.frequency.value=65.5;lfo.frequency.value=.7;lg.gain.value=4;lfo.connect(lg);lg.connect(o1.frequency);f.type="lowpass";f.frequency.value=600;
- g.gain.setValueAtTime(.0001,a.currentTime);g.gain.exponentialRampToValueAtTime(.05,a.currentTime+.5);o1.connect(f);o2.connect(f);f.connect(g).connect(SND.out);o1.start();o2.start();lfo.start();SND.drone={o1,o2,lfo,f,g};}
-function droneDepth(k){const d=SND.drone;if(!d)return;const t=SND.ctx.currentTime;d.o1.frequency.setTargetAtTime(130-90*k,t,.2);d.o2.frequency.setTargetAtTime(65-38*k,t,.2);d.f.frequency.setTargetAtTime(600-420*k,t,.2);}
+ o1.type="sine";o2.type="sine";o1.frequency.value=130;o2.frequency.value=65.5;lfo.frequency.value=.7;lg.gain.value=4;lfo.connect(lg);lg.connect(o1.frequency);f.type="lowpass";f.frequency.value=380;
+ g.gain.setValueAtTime(.0001,a.currentTime);g.gain.exponentialRampToValueAtTime(.016,a.currentTime+.8);o1.connect(f);o2.connect(f);f.connect(g).connect(SND.out);o1.start();o2.start();lfo.start();SND.drone={o1,o2,lfo,f,g};}
+function droneDepth(k){const d=SND.drone;if(!d)return;const t=SND.ctx.currentTime;d.o1.frequency.setTargetAtTime(130-90*k,t,.2);d.o2.frequency.setTargetAtTime(65-38*k,t,.2);d.f.frequency.setTargetAtTime(380-260*k,t,.2);}
 function droneStop(){const d=SND.drone;if(!d)return;SND.drone=null;const t=SND.ctx.currentTime;d.g.gain.setTargetAtTime(.0001,t,.15);[d.o1,d.o2,d.lfo].forEach(o=>o.stop(t+.8));}
 function setMute(m){SND.muted=m;store.set("deepcast-muted",m?"1":"0");document.getElementById("waves").style.display=m?"none":"";document.getElementById("xmark").style.display=m?"":"none";if(m){droneStop();if(SND.ctx)SND.ctx.suspend();}}
 
@@ -382,10 +382,9 @@ function landed(){const p=G.pending,T=TIER[p.tier];G.score+=T.pts;G.hist[G.qi]=(
  $("msg").innerHTML=`${T.key} answer · hooked at ${depthAt(p.tier)} m`+(p.fixed?` · <span class="fix">autocorrected from “${esc(p.raw)}”</span>`:"");
  if(G.cast>=CASTS){$("f").classList.add("hidden");setTimeout(showAway,900);}else{$("inp").value="";lock(false);}}
 function showAway(){const cat=G.qs[G.qi],gem=cat.entries.find(e=>e.gem);
- const missed=cat.entries.filter(e=>!G.seen.has(e)&&!e.gem).sort((a,b)=>b.tier-a.tier||Math.random()-.5).slice(0,6);
  const chips=a=>a.map(e=>`<span class="chip" style="background:${TIER[e.gem?6:e.tier].hex}">${esc(e.name)}</span>`).join("");
  const last=G.qi+1>=QUESTIONS,box=$("awayBox");box.classList.remove("hidden");
- box.innerHTML=`<div class="lbl">${G.seen.has(gem)?"You landed the Golden Leviathan!":"The Golden Leviathan was hiding behind"}</div><div class="chips">${chips([gem])}</div><div class="lbl">The ones that got away</div><div class="chips">${chips(missed)}</div>
+ box.innerHTML=`${G.seen.has(gem)?'<div class="lbl" style="color:#ffd23f;margin-bottom:8px">You landed the Golden Leviathan!</div>':""}
   <div class="next"><span class="lbl" id="cd">${last?"Counting the haul":"Next prompt"} in ${AUTO_NEXT}</span><div class="bar"><i style="animation-duration:${AUTO_NEXT}s"></i></div><button id="nextBtn">${last?"Haul ►":"Next ►"}</button></div>`;
  let left=AUTO_NEXT;const go=()=>{clearInterval(autoT);G.qi++;if(G.qi<QUESTIONS){sfx.next();loadQ();}else endGame();};
  autoT=setInterval(()=>{left--;if(left<=0)go();else{$("cd").textContent=`${last?"Counting the haul":"Next prompt"} in ${left}`;if(left<=3)sfx.count();}},1000);
